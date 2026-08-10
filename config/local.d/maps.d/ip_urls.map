@@ -1,5 +1,7 @@
-# IP URL suspicious map — exact IP address match
-# Add known malicious IP addresses here. For arbitrary IP detection,
-# the HTTP_TO_IP and HFILTER symbols already handle the general case.
-# This map is for IPs specifically seen in phishing campaigns.
-# Format: <ip-address>
+# IP URL suspicious — regexp map for arbitrary IPv4/IPv6 literal hostnames
+# Matches URLs using raw IP addresses instead of domain names
+# Format: regexp pattern (Rspamd regexp map)
+# IPv4: digits.digits.digits.digits
+# IPv6: bracketed [hex:...]
+^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$
+^\[[0-9a-fA-F:]+\]$
