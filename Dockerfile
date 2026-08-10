@@ -7,9 +7,10 @@ LABEL org.opencontainers.image.source="https://github.com/team-telnyx/messaging-
 # Base image runs as UID 11333 — switch to root for package install
 USER root
 
-# Rspamd base is Debian 12 (Bookworm). drill is in ldnsutils.
+# Rspamd base is Debian 12 (Bookworm). ldnsutils provides drill.
+# curl and bzip2 needed for Bayes seeding script.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      ldnsutils \
+      ldnsutils curl bzip2 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy Rspamd configuration
@@ -19,10 +20,11 @@ COPY --chown=11333:11333 config/override.d/ /etc/rspamd/override.d/
 # Copy maps
 COPY --chown=11333:11333 config/local.d/maps.d/ /etc/rspamd/local.d/maps.d/
 
-# Copy entrypoint and healthcheck scripts
+# Copy entrypoint, healthcheck, and seed-bayes scripts
 COPY --chown=11333:11333 scripts/entrypoint.sh /entrypoint.sh
 COPY --chown=11333:11333 scripts/healthcheck.sh /healthcheck.sh
-RUN chmod +x /entrypoint.sh /healthcheck.sh
+COPY --chown=11333:11333 scripts/seed-bayes.sh /scripts/seed-bayes.sh
+RUN chmod +x /entrypoint.sh /healthcheck.sh /scripts/seed-bayes.sh
 
 # Switch back to Rspamd user
 USER 11333:11333
