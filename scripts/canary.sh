@@ -86,17 +86,17 @@ run_spam_canary() {
 run_phishing_canary() {
   local output action
   if ! output=$(scan_message "$TMP_DIR/phishing.eml"); then
-    log_result phishing fail "PHISHED_OPENPHISH symbol" unavailable "rspamc request failed"
+    log_result phishing fail "OPENPHISH_CANARY symbol" unavailable "rspamc request failed"
     return 1
   fi
 
   action=$(extract_action "$output")
-  if printf '%s\n' "$output" | grep -Eq '(^|[^[:alnum:]_])PHISHED_OPENPHISH([^[:alnum:]_]|$)'; then
-    log_result phishing pass "PHISHED_OPENPHISH symbol" "${action:-missing}" "deterministic phishing URL detected"
+  if printf '%s\n' "$output" | grep -Eq '(^|[^[:alnum:]_])OPENPHISH_CANARY([^[:alnum:]_]|$)'; then
+    log_result phishing pass "OPENPHISH_CANARY symbol" "${action:-missing}" "deterministic phishing URL detected"
     return 0
   fi
 
-  log_result phishing fail "PHISHED_OPENPHISH symbol" "${action:-missing}" "expected symbol missing"
+  log_result phishing fail "OPENPHISH_CANARY symbol" "${action:-missing}" "expected symbol missing"
   return 1
 }
 

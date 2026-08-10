@@ -32,7 +32,7 @@ case "$message" in
     if [[ "$mode" == "phishing-fail" ]]; then
       printf 'Action: add header\nSymbol: TEST_FAILURE\n'
     else
-      printf 'Action: add header\nSymbol: PHISHED_OPENPHISH\n'
+      printf 'Action: add header\nSymbol: OPENPHISH_CANARY\n'
     fi
     ;;
   *)
