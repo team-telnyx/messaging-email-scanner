@@ -60,7 +60,22 @@ curl -s http://localhost:11333/ping
 curl -s -X POST http://localhost:11333/checkv2 \
   -H "Content-Type: message/rfc822" \
   --data-binary @test.eml | jq .
+
+# Run clean, GTUBE-spam, and deterministic phishing canaries
+RSPAMD_HOST=127.0.0.1 scripts/canary.sh
 ```
+
+## Synthetic canaries
+
+`/scripts/canary.sh` runs three `rspamc` checks and exits non-zero if any
+expectation fails:
+
+- known-clean MIME must return `no action`
+- the standard GTUBE message must return `reject` or `add header`
+- the controlled phishing URL must emit `PHISHED_OPENPHISH`
+
+Every result and the final summary are emitted as one-line JSON for log-based
+alerts. The deployment CronJob runs this script every five minutes.
 
 ## Design Document
 

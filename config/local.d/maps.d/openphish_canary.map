@@ -1,0 +1,3 @@
+# Deterministic MSG-1775 phishing canary. This hostname is controlled by Telnyx
+# and exists only so monitoring does not depend on the mutable public feed.
+scan-canary-phish.msgtelnyx.com
