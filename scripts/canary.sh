@@ -145,9 +145,9 @@ for canary in clean spam phishing; do
 done
 
 if ((failed == 0)); then
-  printf '{"event":"rspamd_canary_summary","status":"pass","passed":%d,"failed":0}\n' "$passed"
+  printf '{"event":"rspamd_canary_summary","status":"pass","passed":%d,"failed":0,"timestamp":"%s"}\n' "$passed" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   exit 0
 fi
 
-printf '{"event":"rspamd_canary_summary","status":"fail","passed":%d,"failed":%d}\n' "$passed" "$failed"
+printf '{"event":"rspamd_canary_summary","status":"fail","passed":%d,"failed":%d,"timestamp":"%s"}\n' "$passed" "$failed" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 exit 1
