@@ -17,7 +17,6 @@ services:
     volumes:
       - ./config/local.d:/etc/rspamd/local.d:ro
       - ./config/override.d:/etc/rspamd/override.d:ro
-      - ./config/maps:/etc/rspamd/local.d/maps.d:ro
       - rspamd-data:/var/lib/rspamd
     depends_on:
       redis:
@@ -66,7 +65,7 @@ services:
       - "127.0.0.1:5353:53/udp"  # DNS — localhost only
       - "127.0.0.1:5353:53/tcp"
     healthcheck:
-      test: ["CMD-SHELL", "dig @127.0.0.1 google.com A +short || exit 1"]
+      test: ["CMD-SHELL", "drill google.com 2>/dev/null && exit 0 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
