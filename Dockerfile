@@ -20,11 +20,12 @@ COPY --chown=11333:11333 config/override.d/ /etc/rspamd/override.d/
 # Copy maps
 COPY --chown=11333:11333 config/local.d/maps.d/ /etc/rspamd/local.d/maps.d/
 
-# Copy entrypoint, healthcheck, and seed-bayes scripts
+# Copy entrypoint, healthcheck, training, and synthetic canary scripts
 COPY --chown=11333:11333 scripts/entrypoint.sh /entrypoint.sh
 COPY --chown=11333:11333 scripts/healthcheck.sh /healthcheck.sh
 COPY --chown=11333:11333 scripts/seed-bayes.sh /scripts/seed-bayes.sh
-RUN chmod +x /entrypoint.sh /healthcheck.sh /scripts/seed-bayes.sh
+COPY --chown=11333:11333 scripts/canary.sh /scripts/canary.sh
+RUN chmod +x /entrypoint.sh /healthcheck.sh /scripts/seed-bayes.sh /scripts/canary.sh
 
 # Switch back to Rspamd user
 USER 11333:11333
