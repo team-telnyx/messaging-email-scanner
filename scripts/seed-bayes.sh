@@ -2,8 +2,8 @@
 # Seed Bayes classifier with SpamAssassin public corpus
 # Downloads, extracts, and trains Rspamd's Bayes classifier via rspamc
 #
-# Must run INSIDE the messaging-email-scanner container (has rspamc + curl + tar)
-# Usage: docker exec messaging-email-scanner-rspamd-1 sh /scripts/seed-bayes.sh
+# Must run INSIDE the messaging-email-scanner container (has rspamc + curl + tar + bzip2)
+# Usage: docker exec messaging-email-scanner-rspamd-1 /scripts/seed-bayes.sh
 #
 # Requires: RSPAMD_CONTROLLER_ENABLE_PASSWORD env var (injected by entrypoint)
 
@@ -44,8 +44,12 @@ for name in "${!ARCHIVES[@]}"; do
   tar xjf "$archive" -C "$CORPUS_DIR"
 done
 
-# Get baseline counts
-BEFORE=$(rspamc -h "$RSPAMD_HOST:$RSPAMD_PORT" -P "$RSPAMD_PWD" stat 2>/dev/null | grep "learned" | grep -oP '\d+' || echo "0")
+# Get baseline count — parse "Messages learned: N" exactly
+BEFORE=$(rspamc -h "$RSPAMD_HOST:$RSPAMD_PORT" -P "$RSPAMD_PWD" stat 2>/dev/null | grep -oP 'Messages learned: \K\d+' || echo "")
+if ! [[ "$BEFORE" =~ ^[0-9]+$ ]]; then
+  echo "ERROR: Could not parse baseline 'Messages learned' count" >&2
+  exit 1
+fi
 echo "Baseline messages learned: $BEFORE"
 
 # Train spam — exclude cmds and other non-message artifacts
@@ -83,8 +87,12 @@ for dir in easy_ham hard_ham easy_ham_2; do
 done
 echo "Ham files processed: $HAM_TRAINED"
 
-# Verify delta
-AFTER=$(rspamc -h "$RSPAMD_HOST:$RSPAMD_PORT" -P "$RSPAMD_PWD" stat 2>/dev/null | grep "learned" | grep -oP '\d+' || echo "0")
+# Verify delta — parse "Messages learned: N" exactly
+AFTER=$(rspamc -h "$RSPAMD_HOST:$RSPAMD_PORT" -P "$RSPAMD_PWD" stat 2>/dev/null | grep -oP 'Messages learned: \K\d+' || echo "")
+if ! [[ "$AFTER" =~ ^[0-9]+$ ]]; then
+  echo "ERROR: Could not parse post-seed 'Messages learned' count" >&2
+  exit 1
+fi
 DELTA=$((AFTER - BEFORE))
 echo ""
 echo "=== Training results ==="

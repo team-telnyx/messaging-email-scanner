@@ -7,10 +7,15 @@ name: messaging-email-scanner
 
 services:
   rspamd:
-    image: rspamd/rspamd:3.10
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: messaging-email-scanner:local
     restart: unless-stopped
     environment:
       RSPAMD_LOGGING_LEVEL: "info"
+      RSPAMD_CONTROLLER_PASSWORD: "q1"
+      RSPAMD_CONTROLLER_ENABLE_PASSWORD: "q1"
     ports:
       - "127.0.0.1:11333:11333"  # Scanner — localhost only
       - "127.0.0.1:11334:11334"  # Controller — localhost only
