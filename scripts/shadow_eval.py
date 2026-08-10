@@ -356,8 +356,14 @@ def _deduplicate_by_attempt(decisions: List[Dict[str, Any]]) -> List[Dict[str, A
             new_ts = _parse_dt(d.get("inserted_at") or d.get("created_at"))
             if new_ts and (not existing_ts or new_ts > existing_ts):
                 by_key[key] = d
+            elif not new_ts and not existing_ts:
+                # Both timestamps missing — use evaluation_id tie-breaker
+                existing_eval = existing.get("evaluation_id") or ""
+                new_eval = d.get("evaluation_id") or ""
+                if new_eval > existing_eval:
+                    by_key[key] = d
             elif new_ts and existing_ts and new_ts == existing_ts:
-                # Tie-breaker: higher evaluation_id wins (deterministic)
+                # Equal timestamps — use evaluation_id tie-breaker
                 existing_eval = existing.get("evaluation_id") or ""
                 new_eval = d.get("evaluation_id") or ""
                 if new_eval > existing_eval:
