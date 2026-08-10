@@ -1,22 +1,24 @@
 #!/bin/sh
 # Entrypoint for messaging-email-scanner
 # Generates hashed controller passwords from environment variables
-# and starts Rspamd with the injected values
+# and starts Rspamd with the injected values.
+# Fails closed if credentials are missing — no healthy scanner with unusable controller.
 
 set -eu
 
-# Generate password hashes from plaintext env vars using rspamadm pw
-# -e selects encryption mode, -p supplies the password
-CONTROLLER_PASSWORD_HASH=""
-CONTROLLER_ENABLE_PASSWORD_HASH=""
-
-if [ -n "${RSPAMD_CONTROLLER_PASSWORD:-}" ]; then
-  CONTROLLER_PASSWORD_HASH=$(rspamadm pw -e -p "${RSPAMD_CONTROLLER_PASSWORD}")
+# Fail closed — both credentials must be present
+if [ -z "${RSPAMD_CONTROLLER_PASSWORD:-}" ]; then
+  echo "ERROR: RSPAMD_CONTROLLER_PASSWORD is required" >&2
+  exit 1
+fi
+if [ -z "${RSPAMD_CONTROLLER_ENABLE_PASSWORD:-}" ]; then
+  echo "ERROR: RSPAMD_CONTROLLER_ENABLE_PASSWORD is required" >&2
+  exit 1
 fi
 
-if [ -n "${RSPAMD_CONTROLLER_ENABLE_PASSWORD:-}" ]; then
-  CONTROLLER_ENABLE_PASSWORD_HASH=$(rspamadm pw -e -p "${RSPAMD_CONTROLLER_ENABLE_PASSWORD}")
-fi
+# Generate password hashes using rspamadm pw -e -p
+CONTROLLER_PASSWORD_HASH=$(rspamadm pw -e -p "${RSPAMD_CONTROLLER_PASSWORD}")
+CONTROLLER_ENABLE_PASSWORD_HASH=$(rspamadm pw -e -p "${RSPAMD_CONTROLLER_ENABLE_PASSWORD}")
 
 # Start Rspamd with injected password hashes and logging level
 exec rspamd -f \
