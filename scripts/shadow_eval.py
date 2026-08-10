@@ -54,17 +54,51 @@ CANARY_MAX_AGE_SECONDS = 900  # 15 minutes
 
 
 def _parse_dt(val: Any) -> Optional[datetime]:
-    """Parse a datetime from string or pass through."""
+    """Parse a datetime from string or pass through. Returns None on failure."""
     if val is None:
         return None
     if isinstance(val, datetime):
         return val
     if isinstance(val, str):
         try:
-            return datetime.fromisoformat(val.replace("Z", "+00:00"))
+            dt = datetime.fromisoformat(val.replace("Z", "+00:00"))
+            # Convert naive datetimes to UTC-aware
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return dt
         except (ValueError, TypeError):
             return None
     return None
+
+
+def _validate_phase_bounds(
+    phase_start: Optional[str],
+    phase_end: Optional[str],
+) -> Tuple[Optional[datetime], Optional[datetime], Optional[str]]:
+    """Validate phase bounds. Returns (start_dt, end_dt, error_message)."""
+    if not phase_start and not phase_end:
+        return None, None, None
+
+    # If either is provided, both must be provided
+    if not phase_start or not phase_end:
+        return None, None, "Both --phase-start and --phase-end must be provided together"
+
+    ps_dt = _parse_dt(phase_start)
+    pe_dt = _parse_dt(phase_end)
+
+    if ps_dt is None:
+        return None, None, f"Invalid --phase-start: {phase_start!r}"
+    if pe_dt is None:
+        return None, None, f"Invalid --phase-end: {phase_end!r}"
+
+    if ps_dt > pe_dt:
+        return None, None, "phase_start must be <= phase_end"
+
+    now = datetime.now(timezone.utc)
+    if pe_dt > now:
+        return None, None, "phase_end must not be in the future"
+
+    return ps_dt, pe_dt, None
 
 
 def load_scan_decisions_from_db(
@@ -187,20 +221,30 @@ def _filter_phase_window(
 
 def _deduplicate_by_attempt(decisions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Deduplicate scan decisions by (message_id, recipient_id, injection_attempt_id).
-    Keeps the first (latest) evaluation per attempt."""
-    seen = set()
-    unique = []
+    When multiple evaluations exist for the same attempt, prefer the one with
+    scan_status='success' over 'error', then the latest by inserted_at."""
+    by_key: Dict[Tuple, Dict[str, Any]] = {}
     for d in decisions:
         key = (
             d.get("message_id"),
             d.get("recipient_id"),
             d.get("injection_attempt_id"),
         )
-        if key in seen:
+        if key not in by_key:
+            by_key[key] = d
             continue
-        seen.add(key)
-        unique.append(d)
-    return unique
+        # Prefer success over error, then latest timestamp
+        existing = by_key[key]
+        existing_status = existing.get("scan_status")
+        new_status = d.get("scan_status")
+        if new_status == "success" and existing_status != "success":
+            by_key[key] = d
+        elif new_status == existing_status:
+            existing_ts = _parse_dt(existing.get("inserted_at") or existing.get("created_at"))
+            new_ts = _parse_dt(d.get("inserted_at") or d.get("created_at"))
+            if new_ts and (not existing_ts or new_ts > existing_ts):
+                by_key[key] = d
+    return list(by_key.values())
 
 
 def evaluate_gates(
@@ -211,6 +255,9 @@ def evaluate_gates(
     phase_end: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Evaluate all launch gates against the collected data."""
+
+    # Validate phase bounds if provided
+    ps_dt, pe_dt, phase_error = _validate_phase_bounds(phase_start, phase_end)
 
     # Filter to shadow mode only
     shadow_decisions = [d for d in decisions if d.get("scan_mode") == "shadow"]
@@ -226,10 +273,17 @@ def evaluate_gates(
     failed_scans = [d for d in unique_decisions if d.get("scan_status") == "error"]
 
     # Scan coverage: unique successful scans / Kumo receptions
+    # Reject inconsistent counts (successful scans > kumo_receptions is impossible)
     if kumo_receptions is not None and kumo_receptions > 0:
-        scan_coverage = len(successful_scans) / kumo_receptions
+        if len(successful_scans) > kumo_receptions:
+            scan_coverage = None  # Impossible — inconsistent data
+            coverage_error = f"Inconsistent: {len(successful_scans)} successful scans > {kumo_receptions} kumo_receptions"
+        else:
+            scan_coverage = len(successful_scans) / kumo_receptions
+            coverage_error = None
     else:
         scan_coverage = None
+        coverage_error = None
 
     # Scan latency p50/p99 — strict validation: no bools, must be finite
     valid_latencies = [
@@ -249,15 +303,12 @@ def evaluate_gates(
         action = d.get("policy_action") or d.get("rspamd_action") or "unknown"
         action_counts[action] = action_counts.get(action, 0) + 1
 
-    # Observation period: use explicit phase window if provided, else from data
-    if phase_start and phase_end:
-        ps_dt = _parse_dt(phase_start)
-        pe_dt = _parse_dt(phase_end)
-        if ps_dt and pe_dt:
-            observation_days = (pe_dt - ps_dt).days + 1  # inclusive of both days
-        else:
-            observation_days = 0
-    elif unique_decisions:
+    # Observation period: use validated phase window if provided, else from data
+    if phase_error:
+        observation_days = 0
+    elif ps_dt and pe_dt:
+        observation_days = (pe_dt - ps_dt).days + 1  # inclusive of both days
+    elif shadow_decisions:
         timestamps = [
             _parse_dt(d.get("inserted_at") or d.get("created_at"))
             for d in unique_decisions
@@ -285,7 +336,10 @@ def evaluate_gates(
             is_fresh = False
         else:
             age = (datetime.now(timezone.utc) - canary_ts).total_seconds()
-            if age > CANARY_MAX_AGE_SECONDS:
+            if age < -60:  # Allow 60s clock skew, reject future beyond that
+                canary_detail["freshness"] = f"future timestamp ({age:.0f}s — clock skew?)"
+                is_fresh = False
+            elif age > CANARY_MAX_AGE_SECONDS:
                 canary_detail["freshness"] = f"stale ({age:.0f}s old, max {CANARY_MAX_AGE_SECONDS}s)"
                 is_fresh = False
             else:
@@ -329,9 +383,8 @@ def evaluate_gates(
             "description": GATES["scan_coverage"]["description"],
             "threshold": GATES["scan_coverage"]["threshold"],
             "actual": (
-                f"{scan_coverage * 100:.2f}%"
-                if scan_coverage is not None
-                else "UNKNOWN — --kumo-receptions not provided"
+                coverage_error or
+                (f"{scan_coverage * 100:.2f}%" if scan_coverage is not None else "UNKNOWN — --kumo-receptions not provided")
             ),
             "pass": scan_coverage is not None and scan_coverage > 0.99,
         },
@@ -354,8 +407,8 @@ def evaluate_gates(
         "min_observation_days": {
             "description": GATES["min_observation_days"]["description"],
             "threshold": GATES["min_observation_days"]["threshold"],
-            "actual": f"{observation_days} days",
-            "pass": observation_days >= 7,
+            "actual": f"{observation_days} days" + (f" (ERROR: {phase_error})" if phase_error else ""),
+            "pass": observation_days >= 7 and not phase_error,
         },
     }
 
@@ -381,19 +434,23 @@ def evaluate_gates(
         "evaluation_period_days": observation_days,
         "summary": summary,
         "launch_gates": gate_results,
-        "ready_for_next_phase": all_pass,
+        "operational_gates_passed": all_pass,
+        "ready_for_next_phase": False,  # Always false — quarantine requires separate detection-quality gate
         "recommendation": (
-            "All operational launch gates passed. NOTE: Detection-quality gate "
-            "(precision, recall, FPR from reviewed appeals) is STILL REQUIRED before "
-            "quarantine activation. Run the detection-quality gate separately."
+            "All operational launch gates passed. "
+            "Detection-quality gate (precision, recall, FPR from reviewed appeals) "
+            "is STILL REQUIRED before quarantine activation. This report alone "
+            "CANNOT authorize Phase 1."
             if all_pass
             else "Operational launch gates not yet met. Continue shadow-mode observation."
         ),
         "scope_note": (
             "This report evaluates OPERATIONAL launch gates only. Detection-quality "
-            "metrics (precision, recall, FPR) require reviewed outcomes from appeals "
-            "and quarantine releases (Phase 1). This script ALONE cannot authorize "
-            "quarantine activation — a separate detection-quality gate is required."
+            "metrics (precision, recall, FPR) require reviewed outcomes from a held-out "
+            "corpus and appeals process. The 'ready_for_next_phase' field is always false "
+            "because quarantine activation requires the full MSG-1791 detection-quality "
+            "gate, not just operational gates. Use 'operational_gates_passed' to check "
+            "the operational subset."
         ),
     }
 
