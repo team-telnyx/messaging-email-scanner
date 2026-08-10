@@ -54,10 +54,14 @@ CANARY_MAX_AGE_SECONDS = 900  # 15 minutes
 
 
 def _parse_dt(val: Any) -> Optional[datetime]:
-    """Parse a datetime from string or pass through. Returns None on failure."""
+    """Parse a datetime from string or pass through. Returns None on failure.
+    Naive datetimes are converted to UTC-aware."""
     if val is None:
         return None
     if isinstance(val, datetime):
+        # Convert naive datetimes to UTC-aware (psycopg2 returns naive for timestamptz)
+        if val.tzinfo is None:
+            return val.replace(tzinfo=timezone.utc)
         return val
     if isinstance(val, str):
         try:
@@ -166,6 +170,112 @@ def load_scan_decisions_from_db(
     return rows
 
 
+def load_canary_results(path: str) -> Optional[Dict]:
+    """Load canary results from a file. Supports both JSON and JSONL formats.
+    
+    canary.sh emits JSONL (one event per line). The summary line contains
+    the overall pass/fail status. This function parses both formats:
+    - JSON: {"clean": true, "spam": true, "phishing": true, "timestamp": "..."}
+    - JSONL: Last line with event=rspamd_canary_summary is the aggregate result
+    """
+    with open(path) as f:
+        content = f.read().strip()
+    
+    if not content:
+        return None
+    
+    # Try JSON first (single object)
+    try:
+        result = json.loads(content)
+        if isinstance(result, dict):
+            return result
+    except json.JSONDecodeError:
+        pass
+    
+    # Try JSONL (multiple lines, find summary)
+    lines = [line.strip() for line in content.splitlines() if line.strip()]
+    summary = None
+    for line in reversed(lines):  # Summary is usually last
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(event, dict):
+            # Check for summary event from canary.sh
+            if event.get("event") == "rspamd_canary_summary":
+                summary = event
+                break
+            # Or check for direct canary result keys
+            if any(k in event for k in REQUIRED_CANARIES):
+                summary = event
+                break
+    
+    if summary is None:
+        # Try to build from individual canary events
+        results: Dict[str, bool] = {}
+        timestamp = None
+        for line in lines:
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(event, dict):
+                continue
+            if event.get("event") == "rspamd_canary_result" or "canary" in event:
+                canary_name = event.get("canary", "")
+                status = event.get("status", "")
+                if canary_name in REQUIRED_CANARIES:
+                    results[canary_name] = status == "pass"
+                if event.get("timestamp"):
+                    timestamp = event["timestamp"]
+        if results:
+            if timestamp:
+                results["timestamp"] = timestamp
+            return results
+    
+    if summary:
+        # Extract canary results from summary
+        result: Dict[str, Any] = {}
+        # If summary has passed/failed counts, derive individual canary status
+        # from the individual result events
+        passed_count = summary.get("passed", 0)
+        failed_count = summary.get("failed", 0)
+        
+        for name in REQUIRED_CANARIES:
+            key = f"{name}_pass"
+            if key in summary:
+                result[name] = bool(summary[key])
+            elif name in summary:
+                val = summary[name]
+                result[name] = val == "pass" if isinstance(val, str) else bool(val)
+        
+        # If we have individual results from the scan above, merge them
+        if not any(name in result for name in REQUIRED_CANARIES):
+            # Build from individual events scanned earlier
+            for line in lines:
+                try:
+                    event = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if not isinstance(event, dict):
+                    continue
+                canary_name = event.get("canary", "")
+                status = event.get("status", "")
+                if canary_name in REQUIRED_CANARIES:
+                    result[canary_name] = status == "pass"
+        
+        # Extract timestamp
+        if "timestamp" in summary:
+            result["timestamp"] = summary["timestamp"]
+        elif "generated_at" in summary:
+            result["generated_at"] = summary["generated_at"]
+        elif "time" in summary:
+            result["timestamp"] = summary["time"]
+        return result if result else None
+    
+    return None
+
+
 def load_scan_decisions_from_json(path: str) -> List[Dict[str, Any]]:
     """Load scan decisions from a JSON file."""
     with open(path) as f:
@@ -221,8 +331,11 @@ def _filter_phase_window(
 
 def _deduplicate_by_attempt(decisions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Deduplicate scan decisions by (message_id, recipient_id, injection_attempt_id).
-    When multiple evaluations exist for the same attempt, prefer the one with
-    scan_status='success' over 'error', then the latest by inserted_at."""
+    When multiple evaluations exist for the same attempt:
+    1. Prefer scan_status='success' over 'error'
+    2. Then prefer latest by inserted_at
+    3. Then prefer highest evaluation_id (deterministic tie-breaker)
+    This makes deduplication independent of input order."""
     by_key: Dict[Tuple, Dict[str, Any]] = {}
     for d in decisions:
         key = (
@@ -233,7 +346,6 @@ def _deduplicate_by_attempt(decisions: List[Dict[str, Any]]) -> List[Dict[str, A
         if key not in by_key:
             by_key[key] = d
             continue
-        # Prefer success over error, then latest timestamp
         existing = by_key[key]
         existing_status = existing.get("scan_status")
         new_status = d.get("scan_status")
@@ -244,6 +356,12 @@ def _deduplicate_by_attempt(decisions: List[Dict[str, Any]]) -> List[Dict[str, A
             new_ts = _parse_dt(d.get("inserted_at") or d.get("created_at"))
             if new_ts and (not existing_ts or new_ts > existing_ts):
                 by_key[key] = d
+            elif new_ts and existing_ts and new_ts == existing_ts:
+                # Tie-breaker: higher evaluation_id wins (deterministic)
+                existing_eval = existing.get("evaluation_id") or ""
+                new_eval = d.get("evaluation_id") or ""
+                if new_eval > existing_eval:
+                    by_key[key] = d
     return list(by_key.values())
 
 
@@ -478,11 +596,10 @@ def main():
     else:
         decisions = load_scan_decisions_from_json(args.json_file)
 
-    # Load canary results
+    # Load canary results (supports JSON and JSONL formats)
     canary_results = None
     if args.canary_file:
-        with open(args.canary_file) as f:
-            canary_results = json.load(f)
+        canary_results = load_canary_results(args.canary_file)
 
     # Evaluate gates
     report = evaluate_gates(
