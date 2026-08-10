@@ -72,10 +72,10 @@ def load_scan_decisions_from_db(db_url: str, days: int = 7) -> List[Dict[str, An
             scan_mode,
             deterministic,
             fallback,
-            created_at
+            inserted_at
         FROM scan_decisions
-        WHERE created_at >= %s
-        ORDER BY created_at DESC
+        WHERE inserted_at >= %s AND scan_mode = 'shadow'
+        ORDER BY inserted_at DESC
         """,
         (since,),
     )
@@ -103,32 +103,62 @@ def calculate_percentile(values: List[float], percentile: float) -> float:
     return sorted_vals[idx]
 
 
-def evaluate_gates(decisions: List[Dict[str, Any]], canary_results: Optional[Dict] = None) -> Dict[str, Any]:
+def evaluate_gates(
+    decisions: List[Dict[str, Any]],
+    canary_results: Optional[Dict] = None,
+    kumo_receptions: Optional[int] = None,
+    phase_start: Optional[str] = None,
+    phase_end: Optional[str] = None,
+) -> Dict[str, Any]:
     """Evaluate all launch gates against the collected data."""
 
-    total_scans = len(decisions)
-    successful_scans = [d for d in decisions if d.get("scan_status") == "success"]
-    failed_scans = [d for d in decisions if d.get("scan_status") == "error"]
+    # Filter to shadow mode only
+    shadow_decisions = [d for d in decisions if d.get("scan_mode") == "shadow"]
+    total_scans = len(shadow_decisions)
+    successful_scans = [d for d in shadow_decisions if d.get("scan_status") == "success"]
+    failed_scans = [d for d in shadow_decisions if d.get("scan_status") == "error"]
 
-    # Scan coverage: successful scans / total scans
-    scan_coverage = len(successful_scans) / total_scans if total_scans > 0 else 0.0
+    # Scan coverage: successful scans / Kumo receptions (not / total scan decisions)
+    # If kumo_receptions not provided, gate fails (can't verify coverage)
+    if kumo_receptions is not None and kumo_receptions > 0:
+        scan_coverage = len(successful_scans) / kumo_receptions
+    else:
+        scan_coverage = None  # Cannot determine without Kumo reception count
 
-    # Scan latency p50/p99
-    latencies = [d.get("scan_time_ms", 0) or 0 for d in successful_scans]
+    # Scan latency p50/p99 — only from scans with valid, finite, non-negative latency
+    latencies = [
+        d.get("scan_time_ms")
+        for d in successful_scans
+        if d.get("scan_time_ms") is not None
+        and isinstance(d.get("scan_time_ms"), (int, float))
+        and d.get("scan_time_ms") >= 0
+    ]
+    latency_completeness = len(latencies) / len(successful_scans) if successful_scans else 0.0
     p50 = calculate_percentile(latencies, 50)
     p99 = calculate_percentile(latencies, 99)
 
     # Detection breakdown
     action_counts: Dict[str, int] = {}
-    for d in decisions:
+    for d in shadow_decisions:
         action = d.get("policy_action") or d.get("rspamd_action") or "unknown"
         action_counts[action] = action_counts.get(action, 0) + 1
 
-    # Observation period
-    if decisions:
+    # Observation period: use explicit phase window if provided, else from data
+    if phase_start and phase_end:
+        if isinstance(phase_start, str):
+            phase_start_dt = datetime.fromisoformat(phase_start.replace("Z", "+00:00"))
+        else:
+            phase_start_dt = phase_start
+        if isinstance(phase_end, str):
+            phase_end_dt = datetime.fromisoformat(phase_end.replace("Z", "+00:00"))
+        else:
+            phase_end_dt = phase_end
+        observation_days = (phase_end_dt - phase_start_dt).days
+    elif shadow_decisions:
         timestamps = [
-            d.get("created_at") for d in decisions
-            if d.get("created_at")
+            d.get("inserted_at") or d.get("created_at")
+            for d in shadow_decisions
+            if d.get("inserted_at") or d.get("created_at")
         ]
         if timestamps:
             timestamps.sort()
@@ -138,47 +168,69 @@ def evaluate_gates(decisions: List[Dict[str, Any]], canary_results: Optional[Dic
                 first = datetime.fromisoformat(first.replace("Z", "+00:00"))
             if isinstance(last, str):
                 last = datetime.fromisoformat(last.replace("Z", "+00:00"))
-            observation_days = (last - first).days
+            observation_days = (last - first).days + 1  # inclusive of both days
         else:
             observation_days = 0
     else:
         observation_days = 0
 
-    # Canary results (expected from the canary CronJob)
-    canary_pass = True
+    # Canary validation: require all three canary types with strict boolean True
+    REQUIRED_CANARIES = {"clean", "spam", "phishing"}
+    canary_pass = False
     canary_detail = {}
     if canary_results:
-        for canary_name, passed in canary_results.items():
-            canary_detail[canary_name] = "pass" if passed else "fail"
-            if not passed:
-                canary_pass = False
+        canary_keys = set(canary_results.keys())
+        missing = REQUIRED_CANARIES - canary_keys
+        extra = canary_keys - REQUIRED_CANARIES
+        for name in REQUIRED_CANARIES:
+            val = canary_results.get(name)
+            if val is None:
+                canary_detail[name] = "missing"
+            elif not isinstance(val, bool):
+                canary_detail[name] = f"invalid type ({type(val).__name__})"
+            elif val:
+                canary_detail[name] = "pass"
+            else:
+                canary_detail[name] = "fail"
+        if missing:
+            canary_detail["missing"] = list(missing)
+        canary_pass = (
+            missing == set()
+            and all(
+                isinstance(canary_results.get(name), bool) and canary_results.get(name)
+                for name in REQUIRED_CANARIES
+            )
+        )
     else:
         canary_detail = {"note": "No canary results provided — manual check required"}
-        canary_pass = False
 
     # Evaluate each gate
     gate_results = {
         "canary_success": {
             "description": GATES["canary_success"]["description"],
-            "threshold": "100% pass",
+            "threshold": "100% pass (clean, spam, phishing required)",
             "actual": canary_pass,
             "pass": canary_pass,
         },
         "scan_coverage": {
             "description": GATES["scan_coverage"]["description"],
-            "threshold": ">99%",
-            "actual": f"{scan_coverage * 100:.2f}%",
-            "pass": scan_coverage >= GATES["scan_coverage"]["threshold"],
+            "threshold": ">99% (strict)",
+            "actual": f"{scan_coverage * 100:.2f}%" if scan_coverage is not None else "UNKNOWN — kumo_receptions not provided",
+            "pass": scan_coverage is not None and scan_coverage > GATES["scan_coverage"]["threshold"],
         },
         "scan_latency_p99": {
             "description": GATES["scan_latency_p99"]["description"],
-            "threshold": "<200ms",
-            "actual": f"{p99:.1f}ms",
-            "pass": p99 <= GATES["scan_latency_p99"]["threshold_ms"],
+            "threshold": "<200ms (strict)",
+            "actual": f"{p99:.1f}ms (completeness: {latency_completeness * 100:.1f}%)",
+            "pass": (
+                latency_completeness == 1.0
+                and len(latencies) > 0
+                and p99 < GATES["scan_latency_p99"]["threshold_ms"]
+            ),
         },
         "min_sample_size": {
             "description": GATES["min_sample_size"]["description"],
-            "threshold": f">={GATES['min_sample_size']['threshold']}",
+            "threshold": f">={GATES['min_sample_size']['threshold']} unique injection attempts",
             "actual": str(total_scans),
             "pass": total_scans >= GATES["min_sample_size"]["threshold"],
         },
@@ -232,6 +284,19 @@ def main():
         help="Path to JSON file containing canary results {name: bool}",
     )
     parser.add_argument(
+        "--kumo-receptions",
+        type=int,
+        help="Total KumoMTA receptions (for scan coverage calculation). Required for coverage gate.",
+    )
+    parser.add_argument(
+        "--phase-start",
+        help="ISO timestamp for Phase 0 shadow start (for observation period)",
+    )
+    parser.add_argument(
+        "--phase-end",
+        help="ISO timestamp for Phase 0 shadow end (for observation period)",
+    )
+    parser.add_argument(
         "--days",
         type=int,
         default=7,
@@ -259,7 +324,22 @@ def main():
             canary_results = json.load(f)
 
     # Evaluate gates
-    report = evaluate_gates(decisions, canary_results)
+    report = evaluate_gates(
+        decisions,
+        canary_results,
+        kumo_receptions=args.kumo_receptions,
+        phase_start=args.phase_start,
+        phase_end=args.phase_end,
+    )
+
+    # Add scope note
+    report["scope_note"] = (
+        "This report evaluates operational launch gates (canary success, scan coverage, "
+        "latency, sample size, observation period). Detection quality metrics (precision, "
+        "recall, FPR) require reviewed outcomes from appeals and quarantine releases, which "
+        "are not available until Phase 1. A separate detection-quality gate must be run before "
+        "advancing to Phase 2."
+    )
 
     # Output
     output = json.dumps(report, indent=2)
