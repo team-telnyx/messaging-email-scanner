@@ -5,19 +5,20 @@
 
 set -eu
 
-# Generate password hashes from plaintext env vars
+# Generate password hashes from plaintext env vars using rspamadm pw
+# -e selects encryption mode, -p supplies the password
 CONTROLLER_PASSWORD_HASH=""
 CONTROLLER_ENABLE_PASSWORD_HASH=""
 
 if [ -n "${RSPAMD_CONTROLLER_PASSWORD:-}" ]; then
-  CONTROLLER_PASSWORD_HASH=$(rspamadm pw -e "${RSPAMD_CONTROLLER_PASSWORD}")
+  CONTROLLER_PASSWORD_HASH=$(rspamadm pw -e -p "${RSPAMD_CONTROLLER_PASSWORD}")
 fi
 
 if [ -n "${RSPAMD_CONTROLLER_ENABLE_PASSWORD:-}" ]; then
-  CONTROLLER_ENABLE_PASSWORD_HASH=$(rspamadm pw -e "${RSPAMD_CONTROLLER_ENABLE_PASSWORD}")
+  CONTROLLER_ENABLE_PASSWORD_HASH=$(rspamadm pw -e -p "${RSPAMD_CONTROLLER_ENABLE_PASSWORD}")
 fi
 
-# Start Rspamd with injected password hashes
+# Start Rspamd with injected password hashes and logging level
 exec rspamd -f \
   --var=CONTROLLER_PASSWORD_HASH="${CONTROLLER_PASSWORD_HASH}" \
   --var=CONTROLLER_ENABLE_PASSWORD_HASH="${CONTROLLER_ENABLE_PASSWORD_HASH}" \
