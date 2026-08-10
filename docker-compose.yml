@@ -1,0 +1,89 @@
+# messaging-email-scanner — Docker Compose for local dev/testing
+#
+# Production deployment uses K8s via deploy-messaging-main meta files.
+# This compose file is for local development and integration testing.
+
+name: messaging-email-scanner
+
+services:
+  rspamd:
+    image: rspamd/rspamd:3.10
+    restart: unless-stopped
+    environment:
+      RSPAMD_LOGGING_LEVEL: "info"
+    ports:
+      - "127.0.0.1:11333:11333"  # Scanner — localhost only
+      - "127.0.0.1:11334:11334"  # Controller — localhost only
+    volumes:
+      - ./config/local.d:/etc/rspamd/local.d:ro
+      - ./config/override.d:/etc/rspamd/override.d:ro
+      - ./config/maps:/etc/rspamd/local.d/maps.d:ro
+      - rspamd-data:/var/lib/rspamd
+    depends_on:
+      redis:
+        condition: service_healthy
+      unbound:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:11333/ping || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 512m
+    networks:
+      - scanner-net
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes --save 60 1000
+    volumes:
+      - redis-data:/data
+    ports:
+      - "127.0.0.1:6379:6379"  # Internal — localhost only
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 1g
+    networks:
+      - scanner-net
+
+  unbound:
+    image: mvance/unbound:1.19.0
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5353:53/udp"  # DNS — localhost only
+      - "127.0.0.1:5353:53/tcp"
+    healthcheck:
+      test: ["CMD-SHELL", "dig @127.0.0.1 google.com A +short || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128m
+    networks:
+      - scanner-net
+
+volumes:
+  rspamd-data:
+  redis-data:
+
+networks:
+  scanner-net:
+    driver: bridge
+    internal: false  # Needs external DNS access for RBL/SURBL

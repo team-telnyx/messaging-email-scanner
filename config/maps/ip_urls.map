@@ -1,0 +1,5 @@
+# IP URL suspicious map — exact IP address match
+# Add known malicious IP addresses here. For arbitrary IP detection,
+# the HTTP_TO_IP and HFILTER symbols already handle the general case.
+# This map is for IPs specifically seen in phishing campaigns.
+# Format: <ip-address>
