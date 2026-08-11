@@ -35,7 +35,7 @@ restore_snapshot() {
   
   # Remove stale AOF manifest and segments so RDB takes precedence on restart
   rm -f "${REDIS_DATA_DIR}/appendonly.aof" "${REDIS_DATA_DIR}/appendonly.aof."* 2>/dev/null || true
-  rm -f "${REDIS_DATA_DIR}/appendonlydir"/* 2>/dev/null || true
+  rm -rf "${REDIS_DATA_DIR}/appendonlydir" 2>/dev/null || true
   
   # Copy the RDB snapshot
   cp "$snapshot_file" "${REDIS_DATA_DIR:-/data}/dump.rdb"
