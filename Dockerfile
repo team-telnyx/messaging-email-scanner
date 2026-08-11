@@ -13,6 +13,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       ldnsutils curl bzip2 \
     && rm -rf /var/lib/apt/lists/*
 
+# Rollout mode is selected by KumoMTA, not by the scanner container:
+# RSPAMD_SCAN_MODE=deterministic_reject rejects only CLAM_VIRUS and
+# PHISHED_OPENPHISH; other reject-level results remain observations.
 # Copy Rspamd configuration
 COPY --chown=11333:11333 config/local.d/ /etc/rspamd/local.d/
 COPY --chown=11333:11333 config/override.d/ /etc/rspamd/override.d/
