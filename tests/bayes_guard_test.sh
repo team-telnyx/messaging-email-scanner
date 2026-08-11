@@ -6,6 +6,7 @@ AUTOLEARN_CONFIG="$REPO_ROOT/config/local.d/bayes_autolearn.conf"
 STATISTIC_CONFIG="$REPO_ROOT/config/override.d/statistic.conf"
 CONTROLLER_CONFIG="$REPO_ROOT/config/override.d/worker-controller.inc"
 HEALTH_CHECK="$REPO_ROOT/scripts/bayes_health_check.sh"
+SNAPSHOT_SCRIPT="$REPO_ROOT/scripts/bayes_snapshot.sh"
 TMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TMP_DIR"' EXIT
 
@@ -25,7 +26,12 @@ assert_config_value() {
 [[ -f "$AUTOLEARN_CONFIG" ]] || fail "missing $AUTOLEARN_CONFIG"
 assert_config_value 'spam_threshold[[:space:]]*=[[:space:]]*15(\.0)?;' "$AUTOLEARN_CONFIG"
 assert_config_value 'ham_threshold[[:space:]]*=[[:space:]]*-2(\.0)?;' "$AUTOLEARN_CONFIG"
+assert_config_value 'class_balance[[:space:]]*=[[:space:]]*0\.9;' "$AUTOLEARN_CONFIG"
 assert_config_value 'min_tokens[[:space:]]*=[[:space:]]*10;' "$AUTOLEARN_CONFIG"
+assert_config_value 'spam_min[[:space:]]*=[[:space:]]*0\.92' "$AUTOLEARN_CONFIG"
+assert_config_value 'ham_max[[:space:]]*=[[:space:]]*0\.08' "$AUTOLEARN_CONFIG"
+assert_config_value '10 learn_ham/account/day \(MSG-1779\)' "$AUTOLEARN_CONFIG"
+assert_config_value 'Per-tenant contribution cap: future enhancement' "$AUTOLEARN_CONFIG"
 assert_config_value 'bayes_autolearn\.conf' "$STATISTIC_CONFIG"
 if grep -Eq 'spam_threshold[[:space:]]*=[[:space:]]*8(\.0)?;|ham_threshold[[:space:]]*=[[:space:]]*-0\.5;' "$STATISTIC_CONFIG"; then
   fail "legacy permissive autolearn thresholds remain active"
@@ -44,7 +50,42 @@ if grep -Eq 'secure_ip[[:space:]]*=[[:space:]]*"|trusted_ips[[:space:]]*=' "$CON
 fi
 
 [[ -x "$HEALTH_CHECK" ]] || fail "$HEALTH_CHECK is missing or not executable"
-bash -n "$HEALTH_CHECK"
+[[ -x "$SNAPSHOT_SCRIPT" ]] || fail "$SNAPSHOT_SCRIPT is missing or not executable"
+bash -n "$HEALTH_CHECK" "$SNAPSHOT_SCRIPT"
+
+# Snapshot and restore are exercised against a fake redis-cli and data volume.
+# This verifies SAVE-before-copy, RDB replacement, and the destructive restore
+# commands without requiring a live Redis process.
+cat >"$TMP_DIR/redis-cli" <<'FAKE_REDIS'
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "$*" >>"${FAKE_REDIS_LOG:?}"
+FAKE_REDIS
+chmod +x "$TMP_DIR/redis-cli"
+mkdir -p "$TMP_DIR/redis-data" "$TMP_DIR/snapshots"
+printf 'original-bayes-rdb\n' >"$TMP_DIR/redis-data/dump.rdb"
+snapshot_log="$TMP_DIR/redis-cli.log"
+env REDIS_CLI_BIN="$TMP_DIR/redis-cli" \
+  FAKE_REDIS_LOG="$snapshot_log" \
+  REDIS_URL=redis://redis:6379 \
+  REDIS_DATA_DIR="$TMP_DIR/redis-data" \
+  BAYES_SNAPSHOT_DIR="$TMP_DIR/snapshots" \
+  "$SNAPSHOT_SCRIPT" >"$TMP_DIR/snapshot.log"
+snapshot_files=("$TMP_DIR"/snapshots/bayes-*.rdb)
+[[ ${#snapshot_files[@]} -eq 1 && -f "${snapshot_files[0]}" ]] || fail "snapshot RDB was not created"
+cmp "$TMP_DIR/redis-data/dump.rdb" "${snapshot_files[0]}" >/dev/null || fail "snapshot does not match Redis RDB"
+grep -q -- '-u redis://redis:6379 SAVE' "$snapshot_log" || fail "snapshot did not request Redis SAVE"
+
+printf 'replacement-bayes-rdb\n' >"$TMP_DIR/restore.rdb"
+env REDIS_CLI_BIN="$TMP_DIR/redis-cli" \
+  FAKE_REDIS_LOG="$snapshot_log" \
+  REDIS_URL=redis://redis:6379 \
+  REDIS_DATA_DIR="$TMP_DIR/redis-data" \
+  BAYES_SNAPSHOT_DIR="$TMP_DIR/snapshots" \
+  "$SNAPSHOT_SCRIPT" --restore "$TMP_DIR/restore.rdb" >"$TMP_DIR/restore.log"
+cmp "$TMP_DIR/restore.rdb" "$TMP_DIR/redis-data/dump.rdb" >/dev/null || fail "restore did not replace Redis RDB"
+grep -q -- '-u redis://redis:6379 FLUSHDB' "$snapshot_log" || fail "restore did not flush Redis"
+grep -q -- '-u redis://redis:6379 SHUTDOWN NOSAVE' "$snapshot_log" || fail "restore did not stop Redis without saving"
 
 # Exercise monitoring without a live Rspamd service. The fake also proves that
 # the script authenticates stats requests and normalizes an http:// endpoint.
@@ -89,18 +130,30 @@ printf 'Statfile: BAYES_HAM type: ham; length: 0; learned: %s; users: 0\n' "$ham
 FAKE
 chmod +x "$TMP_DIR/rspamc"
 
+cat >"$TMP_DIR/audit-counts" <<'AUDIT'
+account-a 20
+account-b 20
+account-c 20
+account-d 20
+account-e 20
+AUDIT
+
 common_env=(
   PATH="$TMP_DIR:$PATH"
   RSPAMC_BIN=rspamc
   RSPAMD_URL=http://rspamd:11334
   RSPAMD_PASSWORD=monitor-secret
   BAYES_STATE_FILE="$TMP_DIR/bayes-health.state"
+  BAYES_DISTRIBUTION_BASELINE_FILE="$TMP_DIR/bayes-distribution.baseline"
+  BAYES_AUDIT_QUERY_CMD="cat '$TMP_DIR/audit-counts'"
 )
 
 normal_output="$TMP_DIR/normal.log"
 env "${common_env[@]}" "$HEALTH_CHECK" >"$normal_output"
 grep -q 'Ham: 100, Spam: 1000' "$normal_output" || fail "normal counts were not reported"
 grep -q 'Ham/spam ratio: 0.1000' "$normal_output" || fail "normal ratio was not reported"
+grep -q 'Classifier distribution: BAYES_SPAM=' "$normal_output" || fail "classifier distribution was not reported"
+grep -q 'Top account: .*share=0.2000' "$normal_output" || fail "per-account learn share was not reported"
 
 poison_output="$TMP_DIR/poison.log"
 set +e
@@ -109,6 +162,37 @@ poison_status=$?
 set -e
 [[ "$poison_status" -eq 1 ]] || fail "high ham/spam ratio did not fail the health check"
 grep -q 'ALERT: ham/spam ratio' "$poison_output" || fail "high-ratio alert was not reported"
+
+drift_output="$TMP_DIR/drift.log"
+set +e
+env "${common_env[@]}" FAKE_SPAM_COUNT=700 FAKE_HAM_COUNT=300 "$HEALTH_CHECK" >"$drift_output" 2>&1
+drift_status=$?
+set -e
+[[ "$drift_status" -eq 1 ]] || fail "classifier distribution drift did not fail the health check"
+grep -q 'ALERT: classifier distribution drift' "$drift_output" || fail "classifier drift alert was not reported"
+
+cat >"$TMP_DIR/audit-counts" <<'DOMINATED_AUDIT'
+abusive-account 30
+account-b 18
+account-c 18
+account-d 17
+account-e 17
+DOMINATED_AUDIT
+account_output="$TMP_DIR/account.log"
+set +e
+env "${common_env[@]}" MAX_LEARNS_PER_HOUR=999999999 "$HEALTH_CHECK" >"$account_output" 2>&1
+account_status=$?
+set -e
+[[ "$account_status" -eq 1 ]] || fail "single-account domination did not fail the health check"
+grep -q 'ALERT: account abusive-account contributes 0.3000' "$account_output" || fail "account-domination alert was not reported"
+
+cat >"$TMP_DIR/audit-counts" <<'AUDIT'
+account-a 20
+account-b 20
+account-c 20
+account-d 20
+account-e 20
+AUDIT
 
 # A prior sample allows the script to calculate the learn-rate delta. Use a
 # two-hour window so scheduler jitter cannot turn this boundary check flaky.
