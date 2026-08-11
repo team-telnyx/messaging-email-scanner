@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# NOTE: CLAM_VIRUS testing requires ClamAV sidecar (MSG-1783)
+# Only PHISHED_OPENPHISH is tested here as the deterministic symbol
+# The live canary requires OPENPHISH_TEST_URL to name a URL currently present
+# in the running OpenPhish feed; it submits that MIME through rspamc.
+
 REPO_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 CANARY="$REPO_ROOT/scripts/canary.sh"
-CONFIG="$REPO_ROOT/config/local.d/deterministic_reject.conf"
+SETTINGS_CONFIG="$REPO_ROOT/config/local.d/settings.conf"
+DEAD_CONFIG="$REPO_ROOT/config/local.d/deterministic_reject.conf"
 TMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TMP_DIR"' EXIT
 
@@ -36,6 +42,9 @@ fi
 fixture=${!#}
 message=$(<"$fixture")
 case "$message" in
+  *"Subject: Telnyx scanner deterministic phishing canary"*)
+    printf 'Action: add header\nScore: 10.80 / 15.00\nSymbol: PHISHED_OPENPHISH\n'
+    ;;
   *"Subject: Telnyx scanner spam canary"*)
     printf 'Action: reject\nScore: 1000.00 / 15.00\nSymbol: GTUBE\n'
     ;;
@@ -54,16 +63,23 @@ FAKE
 chmod +x "$TMP_DIR/rspamc"
 
 output="$TMP_DIR/output.log"
-PATH="$TMP_DIR:$PATH" RSPAMC_BIN=rspamc "$CANARY" --mode deterministic_reject >"$output"
+PATH="$TMP_DIR:$PATH" RSPAMC_BIN=rspamc \
+  OPENPHISH_TEST_URL=https://known-openphish.test/login \
+  "$CANARY" --mode deterministic_reject >"$output"
 
+# GTUBE remains a basic Rspamd reject-path check; it is not deterministic evidence.
 grep -q '"canary":"spam".*"status":"pass".*"expected":"reject".*"actual_action":"reject"' "$output"
 grep -q '"canary":"clean".*"status":"pass".*"expected":"accept".*"actual_action":"no action"' "$output"
 grep -q '"canary":"medium_score".*"status":"pass".*"expected":"accept".*"actual_action":"add header"' "$output"
-grep -q '"event":"rspamd_canary_summary","status":"pass","mode":"deterministic_reject","passed":3,"failed":0' "$output"
+# This is the deterministic precondition: PHISHED_OPENPHISH is present at 10.8,
+# where Rspamd says add-header; KumoMTA's map_action test proves this maps to reject.
+grep -q '"canary":"deterministic_phishing".*"status":"pass".*"expected":"reject".*"actual_action":"add header".*PHISHED_OPENPHISH' "$output"
+grep -q '"event":"rspamd_canary_summary","status":"pass","mode":"deterministic_reject","passed":4,"failed":0' "$output"
 
 zero_score_output="$TMP_DIR/zero-score-output.log"
 set +e
 PATH="$TMP_DIR:$PATH" RSPAMC_BIN=rspamc FAKE_RSPAMC_MEDIUM_SCORE=0.00 \
+  OPENPHISH_TEST_URL=https://known-openphish.test/login \
   "$CANARY" --mode deterministic_reject >"$zero_score_output"
 zero_score_status=$?
 set -e
@@ -73,12 +89,9 @@ if [[ "$zero_score_status" -ne 1 ]]; then
 fi
 grep -q '"canary":"medium_score".*"status":"fail"' "$zero_score_output"
 
-grep -Eq '^outbound[[:space:]]*\{' "$CONFIG"
-grep -Eq 'id[[:space:]]*=[[:space:]]*"outbound";' "$CONFIG"
-grep -Eq 'priority[[:space:]]*=[[:space:]]*high;' "$CONFIG"
-grep -Eq 'reject[[:space:]]*=[[:space:]]*15\.0;' "$CONFIG"
-grep -Eq '"add header"[[:space:]]*=[[:space:]]*6\.0;' "$CONFIG"
-grep -Eq 'greylist[[:space:]]*=[[:space:]]*null;' "$CONFIG"
-grep -Eq '"rewrite subject"[[:space:]]*=[[:space:]]*null;' "$CONFIG"
+[[ ! -e "$DEAD_CONFIG" ]]
+grep -q 'Scan modes (controlled by RSPAMD_SCAN_MODE env var in KumoMTA)' "$SETTINGS_CONFIG"
+grep -q 'deterministic_reject.*PHISHED_OPENPHISH' "$SETTINGS_CONFIG"
+grep -Eq 'reject[[:space:]]*=[[:space:]]*15\.0;' "$SETTINGS_CONFIG"
 
 printf 'deterministic_reject_test: PASS\n'
