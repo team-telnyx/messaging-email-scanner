@@ -40,20 +40,24 @@ restore_snapshot() {
   # Copy the RDB snapshot
   cp "$snapshot_file" "${REDIS_DATA_DIR:-/data}/dump.rdb"
   
-  # Temporarily disable AOF in redis.conf so supervisor restart loads RDB
-  # The supervisor (Docker/k8s) restarts Redis with the config file,
-  # so we must change the config file, not just runtime CONFIG SET
-  REDIS_CONF="${REDIS_CONF_PATH:-${REDIS_DATA_DIR:-/data}/../redis.conf}"
-  if [ -f "$REDIS_CONF" ]; then
-    sed -i 's/^appendonly yes/appendonly no/' "$REDIS_CONF"
-    echo "AOF disabled in $REDIS_CONF — Redis will restart and load the RDB snapshot."
-    echo "After verifying the restore, re-enable AOF:"
-    echo "  sed -i 's/^appendonly no/appendonly yes/' $REDIS_CONF && redis-cli CONFIG SET appendonly yes"
-  else
-    echo "WARNING: redis.conf not found at $REDIS_CONF"
-    echo "Restart Redis with --appendonly no to load the RDB."
-    echo "After restart, re-enable AOF: redis-cli CONFIG SET appendonly yes"
-  fi
+  # KNOWN LIMITATION: The Docker/k8s supervisor may restart Redis with
+  # --appendonly yes (command-line arg), which overrides redis.conf and
+  # creates a fresh AOF, ignoring the restored RDB.
+  #
+  # OPERATOR PROCEDURE:
+  # 1. Stop the Redis container (not just restart — full stop)
+  # 2. Remove --appendonly yes from the container command args
+  # 3. Start Redis — it will load the RDB snapshot
+  # 4. Verify the restore: redis-cli GET <sentinel_key>
+  # 5. Re-enable AOF: redis-cli CONFIG SET appendonly yes
+  # 6. Restore the original container command args
+  echo "RDB snapshot copied. MANUAL RESTART REQUIRED:"
+  echo "  1. Stop Redis container (full stop, not restart)"
+  echo "  2. Remove --appendonly yes from container command"
+  echo "  3. Start Redis (loads RDB)"
+  echo "  4. Verify restore: redis-cli -u \$REDIS_URL GET <sentinel_key>"
+  echo "  5. Re-enable AOF: redis-cli -u \$REDIS_URL CONFIG SET appendonly yes"
+  echo "  6. Restore original container command args"
 }
 
 create_snapshot() {
