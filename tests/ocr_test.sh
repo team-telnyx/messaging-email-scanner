@@ -51,6 +51,36 @@ make_message() {
   } >"$output"
 }
 
+make_empty_image_message() {
+  local image=$1
+  local subject=$2
+  local output=$3
+  local filename
+  filename=$(basename "$image")
+
+  {
+    printf 'From: ocr-test@example.test\r\n'
+    printf 'To: recipient@example.test\r\n'
+    printf 'Subject: %s\r\n' "$subject"
+    printf 'MIME-Version: 1.0\r\n'
+    printf 'Content-Type: multipart/related; boundary="msg1797-empty-image"\r\n'
+    printf '\r\n'
+    printf '%s\r\n' '--msg1797-empty-image'
+    printf 'Content-Type: text/html; charset=UTF-8\r\n'
+    printf 'Content-Transfer-Encoding: 7bit\r\n'
+    printf '\r\n'
+    printf '<html><body><img src="cid:ocr-image" width="400" height="200"></body></html>\r\n'
+    printf '%s\r\n' '--msg1797-empty-image'
+    printf 'Content-Type: image/png; name="%s"\r\n' "$filename"
+    printf 'Content-Disposition: inline; filename="%s"\r\n' "$filename"
+    printf 'Content-ID: <ocr-image>\r\n'
+    printf 'Content-Transfer-Encoding: base64\r\n'
+    printf '\r\n'
+    base64 <"$image"
+    printf '\r\n%s\r\n' '--msg1797-empty-image--'
+  } >"$output"
+}
+
 scan() {
   local message=$1
   local output=$2
@@ -85,6 +115,8 @@ make_message "$TMP_DIR/small-logo.png" "Small clean logo" \
 make_message "$TMP_DIR/benign.png" "Benign newsletter image" \
   "This ordinary quarterly newsletter contains a large editorial image." \
   "$TMP_DIR/benign.eml"
+make_empty_image_message "$TMP_DIR/benign.png" "Empty HTML image" \
+  "$TMP_DIR/empty-image.eml"
 
 # Test 1: image-carried spam text is extracted and contributes score.
 scan "$TMP_DIR/spam.eml" "$TMP_DIR/spam.out"
@@ -113,5 +145,11 @@ spam, benign = map(float, sys.argv[1:])
 if spam <= benign:
     raise SystemExit(f"spam score {spam} did not exceed benign score {benign}")
 PY
+
+# Test 4: Rspamd's built-in R_EMPTY_IMAGE signal remains available alongside
+# OCR for a nearly empty HTML body containing a large inline image.
+scan "$TMP_DIR/empty-image.eml" "$TMP_DIR/empty-image.out"
+grep -q 'R_EMPTY_IMAGE' "$TMP_DIR/empty-image.out" || fail "R_EMPTY_IMAGE was not emitted"
+grep -q 'OCR_PROCESSED' "$TMP_DIR/empty-image.out" || fail "empty HTML image was not OCR processed"
 
 printf 'ocr_test: PASS (spam score=%s, benign score=%s)\n' "$spam_score" "$benign_score"

@@ -21,15 +21,14 @@ local defaults = {
   min_size = 10240,
   max_size = 10485760,
   mime_types = { "image/png", "image/jpeg", "image/gif", "image/bmp", "image/tiff" },
-  max_images = 3,
-  timeout = 10,
+  max_images = 1,
+  timeout = 2,
   max_output_chars = 8192,
-  score_threshold = 3.0,
   image_ratio_threshold = 0.80,
   max_connections = 32,
   max_load = 4.0,
   feed_bayes = true,
-  spam_score = 4.0,
+  spam_score = 5.0,
   spam_patterns = {
     "[vw][i1]agra",
     "buy%s+now",
@@ -101,7 +100,7 @@ local function run_tesseract(part)
   local command = string.format(
     "%s --signal=KILL %d %s %s stdout -l %s --psm 6 2>/dev/null",
     shell_quote(settings.timeout_bin),
-    math.max(1, math.floor(tonumber(settings.timeout) or 10)),
+    math.max(1, math.floor(tonumber(settings.timeout) or 2)),
     shell_quote(settings.tesseract_bin),
     shell_quote(input_path),
     shell_quote(settings.language)
@@ -247,12 +246,10 @@ local function ocr_callback(task)
     return
   end
 
-  local metric = task:get_metric_score()
-  local score = metric and metric[1] or 0
   local selected, selection_reason = ocr_select.should_ocr(
-    score, selection.image_ratio, settings.score_threshold, settings.image_ratio_threshold)
+    selection.image_ratio, settings.image_ratio_threshold)
   if not selected then
-    task:insert_result("OCR_SKIPPED", 1.0, "not_suspicious")
+    task:insert_result("OCR_SKIPPED", 1.0, selection_reason)
     return
   end
 

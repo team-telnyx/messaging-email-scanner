@@ -48,14 +48,11 @@ function exports.collect_parts(parts, settings)
   }
 end
 
-function exports.should_ocr(score, image_ratio, score_threshold, image_ratio_threshold)
-  if (tonumber(score) or 0) > score_threshold then
-    return true, "score"
-  end
+function exports.should_ocr(image_ratio, image_ratio_threshold)
   if (tonumber(image_ratio) or 0) > image_ratio_threshold then
     return true, "image_ratio"
   end
-  return false, "not_suspicious"
+  return false, "image_ratio_below_threshold"
 end
 
 function exports.is_overloaded(worker_stats, load_average, settings)

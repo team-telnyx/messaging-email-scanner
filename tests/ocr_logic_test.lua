@@ -26,7 +26,7 @@ end
 local settings = {
   min_size = 10240,
   max_size = 10485760,
-  max_images = 3,
+  max_images = 1,
   mime_types = {
     "image/png",
     "image/jpeg",
@@ -46,7 +46,7 @@ local selection = ocr_select.collect_parts({
   part("multipart", "mixed", 200000, true),
 }, settings)
 
-eq(#selection.eligible, 3, "max_images is enforced")
+eq(#selection.eligible, 1, "max_images is enforced")
 eq(selection.image_bytes, 200000, "all image bytes count toward ratio")
 eq(selection.total_bytes, 200200, "multipart containers are excluded from ratio")
 
@@ -61,16 +61,13 @@ local too_large = ocr_select.collect_parts({
 }, settings)
 eq(#too_large.eligible, 0, "images above max_size are skipped")
 
-local selected, reason = ocr_select.should_ocr(3.01, 0.1, 3.0, 0.8)
-eq(selected, true, "score above threshold selects OCR")
-eq(reason, "score", "score selection reason")
-
-selected, reason = ocr_select.should_ocr(0, 0.81, 3.0, 0.8)
+local selected, reason = ocr_select.should_ocr(0.81, 0.8)
 eq(selected, true, "high image ratio selects OCR")
 eq(reason, "image_ratio", "image-ratio selection reason")
 
-selected = ocr_select.should_ocr(3.0, 0.8, 3.0, 0.8)
-eq(selected, false, "selection thresholds are strict")
+selected, reason = ocr_select.should_ocr(0.8, 0.8)
+eq(selected, false, "image-ratio threshold is strict")
+eq(reason, "image_ratio_below_threshold", "below-threshold selection reason")
 
 eq(ocr_select.is_overloaded({ connections = 32 }, 1.0, {
   max_connections = 32,
