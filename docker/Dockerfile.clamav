@@ -1,0 +1,13 @@
+FROM clamav/clamav:latest
+
+# The upstream image provides clamdcheck.sh but not the clamdping helper used by
+# the deployment health checks. Expose it under the conventional command name.
+RUN ln -s /usr/local/bin/clamdcheck.sh /usr/local/bin/clamdping
+
+# Set up freshclam to update signatures on startup
+# ClamAV daemon listens on port 3310 by default
+EXPOSE 3310
+
+# Healthcheck: clamd ping
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+  CMD clamdping || exit 1

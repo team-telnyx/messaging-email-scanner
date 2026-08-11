@@ -1,0 +1,19 @@
+services:
+  clamav:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.clamav
+    expose:
+      - "3310"
+    volumes:
+      - clamav-db:/var/lib/clamav
+    healthcheck:
+      test: ["CMD", "clamdping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - scanner-net
+
+volumes:
+  clamav-db:
