@@ -1,15 +1,19 @@
-# Worker controller — ops-only access
-# Controller on port 11334 for learn spam/ham, metrics, config management
-# Passwords are injected via entrypoint script that generates hashed values
+# MSG-1795: Rspamd learn API access control
+# Controller on port 11334 serves statistics and privileged learn operations.
+# Learning always requires the separately injected enable_password credential.
 
 count = 1;
 bind_socket = "0.0.0.0:11334";
-secure_ip = "127.0.0.1";
-secure_ip = "::1";
 static_dir = "";
 
-# These are set by the entrypoint script using --var injection
-# The entrypoint reads RSPAMD_CONTROLLER_PASSWORD and RSPAMD_CONTROLLER_ENABLE_PASSWORD
-# from environment and generates Rspamd password hashes via rspamadm
+# Injected by entrypoint.sh after hashing the environment-provided secrets.
 password = "${CONTROLLER_PASSWORD_HASH}";
 enable_password = "${CONTROLLER_ENABLE_PASSWORD_HASH}";
+
+# The packaged worker grants loopback password-less access. An explicit empty
+# value is required to override that inherited default; omission is not enough.
+secure_ip = [];
+
+# Do not add secure_ip/trusted_ips addresses: Rspamd treats them as
+# password-less. Restrict controller reachability to approved internal services
+# with the production Service/NetworkPolicy instead.
