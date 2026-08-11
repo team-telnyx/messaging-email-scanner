@@ -35,6 +35,14 @@ case "$message" in
       printf 'Action: add header\nSymbol: OPENPHISH_CANARY\n'
     fi
     ;;
+  *"Subject: Telnyx scanner ClamAV canary"*)
+    if [[ "$mode" == "clamav-fail" ]]; then
+      printf 'Action: no action\n'
+    else
+      [[ "$message" == *'X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*'* ]]
+      printf 'Action: add header\nSymbol: CLAM_VIRUS\n'
+    fi
+    ;;
   *)
     printf 'unexpected fixture\n' >&2
     exit 2
@@ -76,5 +84,24 @@ for mode in clean-fail spam-fail phishing-fail; do
   run_canary "$mode" 1
   grep -q '"event":"rspamd_canary_summary","status":"fail","passed":2,"failed":1' "$TMP_DIR/output-$mode.log"
 done
+
+PATH="$TMP_DIR:$PATH" \
+  RSPAMC_BIN=rspamc \
+  RSPAMD_HOST=scanner.test \
+  RSPAMD_PORT=11333 \
+  FAKE_RSPAMC_MODE=pass \
+  "$CANARY" --clamav >"$TMP_DIR/output-clamav.log" 2>&1
+grep -q '"event":"rspamd_canary","canary":"clamav","status":"pass".*"expected":"CLAM_VIRUS symbol"' "$TMP_DIR/output-clamav.log"
+grep -q '"event":"rspamd_canary_summary","status":"pass","passed":4,"failed":0' "$TMP_DIR/output-clamav.log"
+
+set +e
+PATH="$TMP_DIR:$PATH" \
+  RSPAMC_BIN=rspamc \
+  FAKE_RSPAMC_MODE=clamav-fail \
+  "$CANARY" --clamav >"$TMP_DIR/output-clamav-fail.log" 2>&1
+clamav_status=$?
+set -e
+[[ "$clamav_status" -eq 1 ]]
+grep -q '"canary":"clamav","status":"fail"' "$TMP_DIR/output-clamav-fail.log"
 
 printf 'canary_test: PASS\n'

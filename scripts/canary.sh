@@ -11,10 +11,11 @@ RSPAMD_TIMEOUT=${RSPAMD_TIMEOUT:-10}
 RSPAMD_SCAN_MODE=${RSPAMD_SCAN_MODE:-baseline}
 OPENPHISH_TEST_URL=${OPENPHISH_TEST_URL:-}
 CANARY_MODE=$RSPAMD_SCAN_MODE
+CLAMAV_CANARY=false
 export RSPAMD_SCAN_MODE
 
 usage() {
-  printf 'Usage: %s [--mode shadow|quarantine|deterministic_reject|score_reject]\n' "${0##*/}"
+  printf 'Usage: %s [--mode shadow|quarantine|deterministic_reject|score_reject] [--clamav]\n' "${0##*/}"
 }
 
 while (($# > 0)); do
@@ -29,6 +30,10 @@ while (($# > 0)); do
       RSPAMD_SCAN_MODE=$CANARY_MODE
       export RSPAMD_SCAN_MODE
       shift 2
+      ;;
+    --clamav)
+      CLAMAV_CANARY=true
+      shift
       ;;
     -h|--help)
       usage
@@ -226,6 +231,24 @@ run_deterministic_phishing_canary() {
   return 1
 }
 
+run_clamav_canary() {
+  local output action
+
+  if ! output=$(scan_message "$TMP_DIR/clamav.eml"); then
+    log_result clamav fail "CLAM_VIRUS symbol" unavailable "rspamc request failed"
+    return 1
+  fi
+
+  action=$(extract_action "$output")
+  if has_symbol "$output" CLAM_VIRUS; then
+    log_result clamav pass "CLAM_VIRUS symbol" "${action:-missing}" "EICAR detected; KumoMTA deterministic mapping must reject"
+    return 0
+  fi
+
+  log_result clamav fail "CLAM_VIRUS symbol" "${action:-missing}" "EICAR did not produce the expected symbol"
+  return 1
+}
+
 cat >"$TMP_DIR/clean.eml" <<'EOF'
 From: Telnyx Canary <canary@msgtelnyx.com>
 To: Scanner Canary <canary@example.com>
@@ -286,6 +309,18 @@ Content-Type: text/html; charset=UTF-8
 <html><body><a href="$OPENPHISH_TEST_URL">Verify your account</a></body></html>
 EOF
 
+cat >"$TMP_DIR/clamav.eml" <<'EOF'
+From: Telnyx Canary <canary@msgtelnyx.com>
+To: Scanner Canary <canary@example.com>
+Date: Mon, 10 Aug 2026 12:00:00 +0000
+Message-ID: <clamav-canary@msgtelnyx.com>
+Subject: Telnyx scanner ClamAV canary
+MIME-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
+
+X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*
+EOF
+
 case "$CANARY_MODE" in
   baseline|shadow|quarantine)
     canaries=(clean spam phishing)
@@ -297,6 +332,10 @@ case "$CANARY_MODE" in
     canaries=(spam medium_score clean)
     ;;
 esac
+
+if [[ "$CLAMAV_CANARY" == true ]]; then
+  canaries+=(clamav)
+fi
 
 for canary in "${canaries[@]}"; do
   if "run_${canary}_canary"; then
