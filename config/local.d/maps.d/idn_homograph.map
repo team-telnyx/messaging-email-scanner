@@ -1,6 +1,23 @@
 # MSG-1798: IDN homograph patterns (UTF-8 regexp map)
-# Each expression matches one DNS label containing both ASCII Latin letters and
-# a lookalike Cyrillic or Greek character. /u is required for UTF-8 matching.
+# Mixed-script expressions match one DNS label containing both ASCII Latin
+# letters and a lookalike Cyrillic or Greek character. /u is required for
+# UTF-8 matching.
+
+# Punycode is an IDN signal, not a malicious verdict: legitimate international
+# domains also use it. Keep this signal below deterministic rejection and
+# evaluate it with the lookalike patterns and other Rspamd evidence.
+/xn--[a-z0-9]+/
+
+# Common brands written wholly with Cyrillic lookalikes. These labels evade the
+# mixed-script checks because every confusable character is Cyrillic.
+# Apple: Cyrillic а р р ӏ е
+/(?:^|\.)аррӏе(?=\.|$)/iu
+# PayPal: Cyrillic р а у р а ӏ
+/(?:^|\.)раураӏ(?=\.|$)/iu
+# Pepsi: Cyrillic р е р ѕ і
+/(?:^|\.)рерѕі(?=\.|$)/iu
+# Coca-Cola: Cyrillic с о с а с о ӏ а
+/(?:^|\.)соса-?соӏа(?=\.|$)/iu
 
 # Cyrillic small a (U+0430) replacing ASCII a (U+0061)
 /(?:^|\.)(?=[^.]*[a-z])(?=[^.]*а)[^.]+(?=\.|$)/iu

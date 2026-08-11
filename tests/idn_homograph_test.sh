@@ -82,4 +82,17 @@ write_message "$TMP_DIR/mixed-microsoft.eml" "mixed script microsoft homograph" 
 scan_message "$TMP_DIR/mixed-microsoft.eml" >"$TMP_DIR/mixed-microsoft.out"
 assert_symbol_present IDN_HOMOGRAPH "$TMP_DIR/mixed-microsoft.out"
 
+# Test 4: an ASCII punycode encoding is retained as an IDN risk signal.
+write_message "$TMP_DIR/punycode-apple.eml" "punycode apple homograph" \
+  "https://xn--pple-43d.com/account"
+scan_message "$TMP_DIR/punycode-apple.eml" >"$TMP_DIR/punycode-apple.out"
+assert_symbol_present IDN_HOMOGRAPH "$TMP_DIR/punycode-apple.out"
+
+# Test 5: a whole-script Cyrillic Apple lookalike is detected even though it
+# does not mix Latin and Cyrillic characters in the same label.
+write_message "$TMP_DIR/whole-script-apple.eml" "whole script apple homograph" \
+  "https://аррӏе.com/account"
+scan_message "$TMP_DIR/whole-script-apple.eml" >"$TMP_DIR/whole-script-apple.out"
+assert_symbol_present IDN_HOMOGRAPH "$TMP_DIR/whole-script-apple.out"
+
 printf 'idn_homograph_test: PASS\n'
