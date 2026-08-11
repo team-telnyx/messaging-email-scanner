@@ -7,19 +7,24 @@ LABEL org.opencontainers.image.source="https://github.com/team-telnyx/messaging-
 # Base image runs as UID 11333 — switch to root for package install
 USER root
 
-# Rspamd base is Debian 12 (Bookworm). ldnsutils provides drill.
-# curl and bzip2 needed for Bayes seeding script.
+# Rspamd base is Debian 12 (Bookworm). ldnsutils provides drill;
+# curl and bzip2 support Bayes operations. MSG-1797 adds Tesseract OCR with
+# English data, while coreutils supplies the hard per-image timeout command.
 RUN apt-get update && apt-get install -y --no-install-recommends \
       ldnsutils curl bzip2 \
+      tesseract-ocr tesseract-ocr-eng coreutils \
     && rm -rf /var/lib/apt/lists/*
 
 # Rollout mode is selected by KumoMTA, not by the scanner container:
 # RSPAMD_SCAN_MODE=deterministic_reject rejects only CLAM_VIRUS and
 # PHISHED_OPENPHISH; other reject-level results remain observations.
-# Copy Rspamd configuration
 # KumoMTA selects the score-based reject policy with RSPAMD_SCAN_MODE=score_reject.
+# Copy Rspamd configuration and repository-owned Lua modules.
 COPY --chown=11333:11333 config/local.d/ /etc/rspamd/local.d/
 COPY --chown=11333:11333 config/override.d/ /etc/rspamd/override.d/
+COPY --chown=11333:11333 config/plugins.d/ /etc/rspamd/plugins.d/
+COPY --chown=11333:11333 config/lualib/ /usr/share/rspamd/lualib/
+COPY --chown=11333:11333 config/rspamd.conf.local /etc/rspamd/rspamd.conf.local
 
 # Copy maps
 COPY --chown=11333:11333 config/local.d/maps.d/ /etc/rspamd/local.d/maps.d/

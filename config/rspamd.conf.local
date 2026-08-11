@@ -1,0 +1,3 @@
+# Load the custom MSG-1797 OCR module options. Rspamd only includes local.d
+# files for built-in modules automatically; OCR is a repository-owned plugin.
+.include(try=false, priority=10) "$LOCAL_CONFDIR/local.d/ocr.conf"
