@@ -6,23 +6,27 @@ connects to `clamd` over TCP, scans MIME parts and message bodies, and emits the
 
 ## Local Docker deployment
 
-Build and start the ClamAV service from the repository root:
+Build and start the local scanner stack with ClamAV from the repository root:
 
 ```bash
 docker compose --project-directory . \
+  -f docker-compose.yml \
   -f docker/docker-compose.clamav.yml up -d --build
 docker compose --project-directory . \
+  -f docker-compose.yml \
   -f docker/docker-compose.clamav.yml ps
 ```
 
 The named `clamav-db` volume persists downloaded signature databases across
 container restarts. The ClamAV image runs `freshclam` to update signatures and
-`clamd` listens on TCP port 3310. `clamdping` provides the container health
-check.
+`clamd` listens on TCP port 3310. That port is exposed only to containers on
+`scanner-net`; it is not published on a host interface. Because both `rspamd`
+and `clamav` join `scanner-net`, Docker DNS resolves the configured
+`clamav:3310` endpoint. `clamdping` provides the container health check.
 
-For a local end-to-end test, place the Rspamd and ClamAV containers on the same
-Docker network so that Rspamd can resolve `clamav`. The checked-in
-`config/local.d/clamav.conf` connects to `clamav:3310` and
+The compose files place Rspamd and ClamAV on the same Docker network for a local
+end-to-end test. The checked-in `config/local.d/clamav.conf` connects to
+`clamav:3310`, and
 `config/local.d/antivirus.conf` loads that scanner block into Rspamd's built-in
 antivirus module. After both services are healthy, run:
 
@@ -34,6 +38,15 @@ RSPAMD_HOST=127.0.0.1 scripts/canary.sh --clamav
 
 EICAR is an industry-standard, inert antivirus test string. Do not replace it
 with live malware.
+
+### Archive scanning
+
+The EICAR integration test verifies detection in a direct MIME attachment. It
+does not prove archive scanning. Scanning attachments inside ZIP, tar, or other
+archives requires a ClamAV build with archive support enabled (and archive
+scanning enabled in `clamd`); not every ClamAV build provides that support.
+Validate the deployed image and its archive recursion/size limits separately
+before relying on nested-archive detection.
 
 ## Kubernetes deployment
 
