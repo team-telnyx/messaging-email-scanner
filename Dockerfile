@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy Rspamd configuration
+# KumoMTA selects the score-based reject policy with RSPAMD_SCAN_MODE=score_reject.
 COPY --chown=11333:11333 config/local.d/ /etc/rspamd/local.d/
 COPY --chown=11333:11333 config/override.d/ /etc/rspamd/override.d/
 
