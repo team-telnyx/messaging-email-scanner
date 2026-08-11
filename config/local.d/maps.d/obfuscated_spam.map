@@ -1,0 +1,63 @@
+# MSG-1798: Obfuscated spam terms (regexp map)
+# Keep every expression substitution-specific unless a plain term is explicitly
+# listed as risky. The /i modifier makes ASCII matching case-insensitive.
+
+# viagra: v1agra, v1@gra, v!agra
+/\bv[1!](?:a|@)gra\b/i
+
+# cialis: c1@lis, c1alis, c@lis
+/\b(?:c1[@a]lis|c@lis)\b/i
+
+# penis: p3n1s, p3nis, pen1s
+/\b(?:p3n[1i]s|pen1s)\b/i
+
+# xanax: x@nax and the explicitly listed plain term xanax
+/\bx[@a]nax\b/i
+
+# valium: v@lium and the explicitly listed plain term valium
+/\bv[@a]lium\b/i
+
+# loan: l0@n, l0an
+/\bl0[@a]n\b/i
+
+# poker: p0ker, p0k3r
+/\bp0k[e3]r\b/i
+
+# casino: c@sino, c@sin0, c@s1no, c@s1n0, cas1no, cas1n0, casin0
+/\b(?:c@s[i1]n[o0]|cas1n[o0]|casin0)\b/i
+
+# lottery: l0ttery, l0tt3ry
+/\bl0tt[e3]ry\b/i
+
+# weight: w3ight, w3!ght (common in "weight loss" spam)
+/\bw3[i!]ght\b/i
+
+# mortgage: m0rtgage, mortg@ge
+/\b(?:m0rtgage|mortg@ge)\b/i
+
+# credit: cr3dit, cr3d1t, cred1t
+/\b(?:cr3d[i1]t|cred1t)\b/i
+
+# pharmacy: pharm@cy, ph4rmacy
+/\b(?:pharm@cy|ph4rmacy)\b/i
+
+# bonus: b0nus
+/\bb0nus\b/i
+
+# click: cl1ck, c1ick
+/\b(?:cl1ck|c1ick)\b/i
+
+# offer: 0ffer, off3r
+/\b(?:0ffer|off3r)\b/i
+
+# prize: pr1ze
+/\bpr1ze\b/i
+
+# winner: w1nner
+/\bw1nner\b/i
+
+# diet: d1et
+/\bd1et\b/i
+
+# cash: c@sh
+/\bc@sh\b/i

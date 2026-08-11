@@ -1,0 +1,50 @@
+# MSG-1798: IDN homograph patterns (UTF-8 regexp map)
+# Mixed-script expressions match one DNS label containing both ASCII Latin
+# letters and a lookalike Cyrillic or Greek character. /u is required for
+# UTF-8 matching.
+
+# Protected brand lookalikes. Each reviewed Unicode spelling is paired with its
+# exact IDNA ASCII form because Rspamd can expose URL hostnames in either form.
+# Do not add a generic xn-- expression: legitimate IDNs are not homographs.
+# apple: Cyrillic а р р ӏ е
+/(?:^|\.)аррӏе(?=\.|$)/iu
+/(?:^|\.)xn--80ak6aa92e(?=\.|$)/i
+# google: Cyrillic komi de, о о, komi de, palochka, е
+/(?:^|\.)ԍооԍӏе(?=\.|$)/iu
+/(?:^|\.)xn--e1ara49ctjc(?=\.|$)/i
+# microsoft: reviewed Cyrillic-lookalike spelling
+/(?:^|\.)місrоѕоft(?=\.|$)/iu
+/(?:^|\.)xn--rft-jedlas6nf(?=\.|$)/i
+# paypal: Cyrillic р а у р а ӏ
+/(?:^|\.)раураӏ(?=\.|$)/iu
+/(?:^|\.)xn--80aa0cbo65f(?=\.|$)/i
+# amazon: reviewed Cyrillic-lookalike spelling
+/(?:^|\.)аmаzоn(?=\.|$)/iu
+/(?:^|\.)xn--mzn-5cdb9f(?=\.|$)/i
+# facebook: reviewed Cyrillic-lookalike spelling
+/(?:^|\.)fасеbооk(?=\.|$)/iu
+/(?:^|\.)xn--fbk-6cdz9cau(?=\.|$)/i
+# instagram: reviewed Cyrillic-lookalike spelling
+/(?:^|\.)іnѕtаɡrаm(?=\.|$)/iu
+/(?:^|\.)xn--ntrm-17b19yca50aha(?=\.|$)/i
+
+# Cyrillic small a (U+0430) replacing ASCII a (U+0061)
+/(?:^|\.)(?=[^.]*[a-z])(?=[^.]*а)[^.]+(?=\.|$)/iu
+
+# Cyrillic small e (U+0435) replacing ASCII e (U+0065)
+/(?:^|\.)(?=[^.]*[a-z])(?=[^.]*е)[^.]+(?=\.|$)/iu
+
+# Cyrillic small o (U+043E) replacing ASCII o (U+006F)
+/(?:^|\.)(?=[^.]*[a-z])(?=[^.]*о)[^.]+(?=\.|$)/iu
+
+# Cyrillic small er (U+0440) replacing ASCII p (U+0070)
+/(?:^|\.)(?=[^.]*[a-z])(?=[^.]*р)[^.]+(?=\.|$)/iu
+
+# Cyrillic small es (U+0441) replacing ASCII c (U+0063)
+/(?:^|\.)(?=[^.]*[a-z])(?=[^.]*с)[^.]+(?=\.|$)/iu
+
+# Greek small omicron (U+03BF) replacing ASCII o (U+006F)
+/(?:^|\.)(?=[^.]*[a-z])(?=[^.]*ο)[^.]+(?=\.|$)/iu
+
+# Other Latin/Cyrillic or Latin/Greek mixtures in the same DNS label
+/(?:^|\.)(?=[^.]*[a-z])(?=[^.]*[а-яёα-ω])[^.]+(?=\.|$)/iu
