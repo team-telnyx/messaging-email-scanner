@@ -34,8 +34,18 @@ function exports.collect_parts(parts, settings)
             and length >= settings.min_size
             and length <= settings.max_size
             and #eligible < settings.max_images then
+          -- Check pixel dimensions if max_pixels is set
+          local max_px = tonumber(settings.max_pixels) or 0
+          if max_px > 0 then
+            local w = tonumber(part:get_width()) or 0
+            local h = tonumber(part:get_height()) or 0
+            if w * h > max_px then
+              goto continue
+            end
+          end
           eligible[#eligible + 1] = part
         end
+        ::continue::
       end
     end
   end
@@ -56,12 +66,7 @@ function exports.should_ocr(image_ratio, image_ratio_threshold)
 end
 
 function exports.is_overloaded(worker_stats, load_average, settings)
-  local connections = worker_stats and tonumber(worker_stats.connections) or 0
-  local max_connections = tonumber(settings.max_connections) or 0
-  if max_connections > 0 and connections >= max_connections then
-    return true, "connections"
-  end
-
+  -- Use load average (system metric), not cumulative connection counter
   local load = tonumber(load_average) or 0
   local max_load = tonumber(settings.max_load) or 0
   if max_load > 0 and load >= max_load then

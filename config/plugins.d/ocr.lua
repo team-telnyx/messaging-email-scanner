@@ -22,7 +22,9 @@ local defaults = {
   max_size = 10485760,
   mime_types = { "image/png", "image/jpeg", "image/gif", "image/bmp", "image/tiff" },
   max_images = 1,
-  timeout = 2,
+  timeout = 0.4,
+  timeout_ms = 400,
+  max_pixels = 1000000,
   max_output_chars = 8192,
   image_ratio_threshold = 0.80,
   max_connections = 32,
@@ -97,10 +99,12 @@ local function run_tesseract(part)
     return nil, "temporary file write: " .. tostring(write_error)
   end
 
+  local timeout_secs = tonumber(settings.timeout_ms) or 400
+  timeout_secs = timeout_secs / 1000.0
   local command = string.format(
-    "%s --signal=KILL %d %s %s stdout -l %s --psm 6 2>/dev/null",
+    "%s --signal=KILL %.2f %s %s stdout -l %s --psm 6 2>/dev/null",
     shell_quote(settings.timeout_bin),
-    math.max(1, math.floor(tonumber(settings.timeout) or 2)),
+    timeout_secs,
     shell_quote(settings.tesseract_bin),
     shell_quote(input_path),
     shell_quote(settings.language)
