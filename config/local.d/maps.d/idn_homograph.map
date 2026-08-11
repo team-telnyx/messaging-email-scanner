@@ -1,0 +1,24 @@
+# MSG-1798: IDN homograph patterns (UTF-8 regexp map)
+# Each expression matches one DNS label containing both ASCII Latin letters and
+# a lookalike Cyrillic or Greek character. /u is required for UTF-8 matching.
+
+# Cyrillic small a (U+0430) replacing ASCII a (U+0061)
+/(?:^|\.)(?=[^.]*[a-z])(?=[^.]*а)[^.]+(?=\.|$)/iu
+
+# Cyrillic small e (U+0435) replacing ASCII e (U+0065)
+/(?:^|\.)(?=[^.]*[a-z])(?=[^.]*е)[^.]+(?=\.|$)/iu
+
+# Cyrillic small o (U+043E) replacing ASCII o (U+006F)
+/(?:^|\.)(?=[^.]*[a-z])(?=[^.]*о)[^.]+(?=\.|$)/iu
+
+# Cyrillic small er (U+0440) replacing ASCII p (U+0070)
+/(?:^|\.)(?=[^.]*[a-z])(?=[^.]*р)[^.]+(?=\.|$)/iu
+
+# Cyrillic small es (U+0441) replacing ASCII c (U+0063)
+/(?:^|\.)(?=[^.]*[a-z])(?=[^.]*с)[^.]+(?=\.|$)/iu
+
+# Greek small omicron (U+03BF) replacing ASCII o (U+006F)
+/(?:^|\.)(?=[^.]*[a-z])(?=[^.]*ο)[^.]+(?=\.|$)/iu
+
+# Other Latin/Cyrillic or Latin/Greek mixtures in the same DNS label
+/(?:^|\.)(?=[^.]*[a-z])(?=[^.]*[а-яёα-ω])[^.]+(?=\.|$)/iu

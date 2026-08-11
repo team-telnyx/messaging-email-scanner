@@ -19,6 +19,8 @@ KumoMTA (http_message_generated)
 Rspamd Scanner (port 11333, private)
     ├── Bayes classifier (Redis backend)
     ├── OpenPhish feed (phishing URLs)
+    ├── Obfuscated spam text map (regexp multimap)
+    ├── IDN homograph map (regexp multimap)
     ├── Lookalike domain map (multimap)
     ├── IP URL map (multimap)
     ├── MIME type checks (bad extensions)
@@ -63,7 +65,14 @@ curl -s -X POST http://localhost:11333/checkv2 \
 
 # Run clean, GTUBE-spam, and deterministic phishing canaries
 RSPAMD_HOST=127.0.0.1 scripts/canary.sh
+
+# Exercise custom text and IDN homograph rules against the live scanner
+tests/obfuscated_text_test.sh
+tests/idn_homograph_test.sh
 ```
+
+See [`docs/custom-rules.md`](docs/custom-rules.md) for the detected patterns,
+scoring policy, and instructions for extending the maps.
 
 ## Synthetic canaries
 
