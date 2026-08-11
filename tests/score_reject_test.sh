@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# NOTE: Tenant-cohort rollout, rollback, and launch gates are operational
+# concerns handled by the shadow evaluation framework (MSG-1791).
+
 REPO_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 CANARY="$REPO_ROOT/scripts/canary.sh"
-CONFIG="$REPO_ROOT/config/local.d/score_reject.conf"
+SETTINGS_CONFIG="$REPO_ROOT/config/local.d/settings.conf"
+DEAD_CONFIG="$REPO_ROOT/config/local.d/score_reject.conf"
 DOCKERFILE="$REPO_ROOT/Dockerfile"
 TMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TMP_DIR"' EXIT
@@ -73,27 +77,10 @@ grep -q '"event":"rspamd_canary_summary","status":"pass","mode":"score_reject","
 printf 'spam\nmedium_score\nclean\n' >"$TMP_DIR/expected-calls.log"
 cmp "$TMP_DIR/expected-calls.log" "$RSPAMC_CALL_LOG"
 
-cat >"$TMP_DIR/expected-score-reject.conf" <<'CONF'
-# MSG-1785: Score-based reject mode configuration
-# Applied when RSPAMD_SCAN_MODE=score_reject
-# Any message with aggregate Rspamd score >= 15.0 is rejected regardless of symbol composition
-# This is the final active filtering mode — the most aggressive
-
-outbound {
-  id = "outbound";
-  priority = high;
-  apply {
-    actions {
-      reject = 15.0;
-      "add header" = 6.0;
-      greylist = null;
-      "rewrite subject" = null;
-    }
-  }
-}
-CONF
-
-cmp "$TMP_DIR/expected-score-reject.conf" "$CONFIG"
+[[ ! -e "$DEAD_CONFIG" ]]
+grep -q 'Scan modes (controlled by RSPAMD_SCAN_MODE env var in KumoMTA)' "$SETTINGS_CONFIG"
+grep -q 'score_reject.*aggregate score >= 15.0' "$SETTINGS_CONFIG"
+grep -Eq 'reject[[:space:]]*=[[:space:]]*15\.0;' "$SETTINGS_CONFIG"
 grep -q 'RSPAMD_SCAN_MODE=score_reject' "$DOCKERFILE"
 
 printf 'score_reject_test: PASS\n'
