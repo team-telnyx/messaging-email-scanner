@@ -37,10 +37,13 @@ function exports.collect_parts(parts, settings)
           -- Check pixel dimensions if max_pixels is set
           local max_px = tonumber(settings.max_pixels) or 0
           if max_px > 0 then
-            local w = tonumber(part:get_width()) or 0
-            local h = tonumber(part:get_height()) or 0
-            if w * h > max_px then
-              goto continue
+            local image = part:get_image()
+            if image then
+              local w = tonumber(image:get_width()) or 0
+              local h = tonumber(image:get_height()) or 0
+              if w * h > max_px then
+                goto continue
+              end
             end
           end
           eligible[#eligible + 1] = part

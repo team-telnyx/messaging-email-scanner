@@ -69,16 +69,10 @@ selected, reason = ocr_select.should_ocr(0.8, 0.8)
 eq(selected, false, "image-ratio threshold is strict")
 eq(reason, "image_ratio_below_threshold", "below-threshold selection reason")
 
-eq(ocr_select.is_overloaded({ connections = 32 }, 1.0, {
-  max_connections = 32,
-  max_load = 4.0,
-}), true, "connection overload skips OCR")
-eq(ocr_select.is_overloaded({ connections = 1 }, 4.0, {
-  max_connections = 32,
+eq(ocr_select.is_overloaded(nil, 4.0, {
   max_load = 4.0,
 }), true, "load overload skips OCR")
-eq(ocr_select.is_overloaded({ connections = 1 }, 1.0, {
-  max_connections = 32,
+eq(ocr_select.is_overloaded(nil, 1.0, {
   max_load = 4.0,
 }), false, "healthy scanner runs OCR")
 
