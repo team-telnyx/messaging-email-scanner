@@ -3,21 +3,30 @@
 # letters and a lookalike Cyrillic or Greek character. /u is required for
 # UTF-8 matching.
 
-# Punycode is an IDN signal, not a malicious verdict: legitimate international
-# domains also use it. Keep this signal below deterministic rejection and
-# evaluate it with the lookalike patterns and other Rspamd evidence.
-/xn--[a-z0-9]+/
-
-# Common brands written wholly with Cyrillic lookalikes. These labels evade the
-# mixed-script checks because every confusable character is Cyrillic.
-# Apple: Cyrillic а р р ӏ е
+# Protected brand lookalikes. Each reviewed Unicode spelling is paired with its
+# exact IDNA ASCII form because Rspamd can expose URL hostnames in either form.
+# Do not add a generic xn-- expression: legitimate IDNs are not homographs.
+# apple: Cyrillic а р р ӏ е
 /(?:^|\.)аррӏе(?=\.|$)/iu
-# PayPal: Cyrillic р а у р а ӏ
+/(?:^|\.)xn--80ak6aa92e(?=\.|$)/i
+# google: Cyrillic komi de, о о, komi de, palochka, е
+/(?:^|\.)ԍооԍӏе(?=\.|$)/iu
+/(?:^|\.)xn--e1ara49ctjc(?=\.|$)/i
+# microsoft: reviewed Cyrillic-lookalike spelling
+/(?:^|\.)місrоѕоft(?=\.|$)/iu
+/(?:^|\.)xn--rft-jedlas6nf(?=\.|$)/i
+# paypal: Cyrillic р а у р а ӏ
 /(?:^|\.)раураӏ(?=\.|$)/iu
-# Pepsi: Cyrillic р е р ѕ і
-/(?:^|\.)рерѕі(?=\.|$)/iu
-# Coca-Cola: Cyrillic с о с а с о ӏ а
-/(?:^|\.)соса-?соӏа(?=\.|$)/iu
+/(?:^|\.)xn--80aa0cbo65f(?=\.|$)/i
+# amazon: reviewed Cyrillic-lookalike spelling
+/(?:^|\.)аmаzоn(?=\.|$)/iu
+/(?:^|\.)xn--mzn-5cdb9f(?=\.|$)/i
+# facebook: reviewed Cyrillic-lookalike spelling
+/(?:^|\.)fасеbооk(?=\.|$)/iu
+/(?:^|\.)xn--fbk-6cdz9cau(?=\.|$)/i
+# instagram: reviewed Cyrillic-lookalike spelling
+/(?:^|\.)іnѕtаɡrаm(?=\.|$)/iu
+/(?:^|\.)xn--ntrm-17b19yca50aha(?=\.|$)/i
 
 # Cyrillic small a (U+0430) replacing ASCII a (U+0061)
 /(?:^|\.)(?=[^.]*[a-z])(?=[^.]*а)[^.]+(?=\.|$)/iu
