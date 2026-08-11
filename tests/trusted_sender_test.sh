@@ -3,6 +3,7 @@ set -euo pipefail
 
 REPO_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 CONFIG="$REPO_ROOT/config/local.d/trusted_sender.conf"
+OUTBOUND_CONFIG="$REPO_ROOT/config/local.d/settings.conf"
 TMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TMP_DIR"' EXIT
 RSPAMC_BIN=${RSPAMC_BIN:-rspamc}
@@ -76,6 +77,14 @@ grep -Eq 'reject[[:space:]]*=[[:space:]]*20\.0;' "$CONFIG"
 grep -Eq '"add header"[[:space:]]*=[[:space:]]*10\.0;' "$CONFIG"
 grep -Eq 'greylist[[:space:]]*=[[:space:]]*null;' "$CONFIG"
 grep -Eq '"rewrite subject"[[:space:]]*=[[:space:]]*null;' "$CONFIG"
-grep -q 'trusted_sender.conf' "$REPO_ROOT/config/local.d/settings.conf"
+cmp \
+  <(sed -n '/symbols_disabled[[:space:]]*=[[:space:]]*\[/,/^[[:space:]]*\];/p' "$OUTBOUND_CONFIG") \
+  <(sed -n '/symbols_disabled[[:space:]]*=[[:space:]]*\[/,/^[[:space:]]*\];/p' "$CONFIG")
+cmp \
+  <(grep 'groups_disabled' "$OUTBOUND_CONFIG") \
+  <(grep 'groups_disabled' "$CONFIG")
+grep -q 'appeals triage workflow (MSG-1793)' "$CONFIG"
+grep -q 'risk_class=trusted metadata is set by behavioral' "$CONFIG"
+grep -q 'trusted_sender.conf' "$OUTBOUND_CONFIG"
 
 echo 'trusted_sender_test: PASS'
