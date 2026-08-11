@@ -27,11 +27,14 @@ restore_snapshot() {
     exit 2
   fi
 
-  printf 'Restoring Bayes from %s...\n' "$snapshot_file"
+  echo "Restoring Bayes from $2..."
+  # Disable AOF before flushing to prevent the FLUSHDB from being persisted
+  "$REDIS_CLI_BIN" -u "$REDIS_URL" CONFIG SET appendonly no
   "$REDIS_CLI_BIN" -u "$REDIS_URL" FLUSHDB
-  cp "$snapshot_file" "$REDIS_DATA_DIR/dump.rdb"
+  cp "$2" "${REDIS_DATA_DIR:-/data}/dump.rdb"
   "$REDIS_CLI_BIN" -u "$REDIS_URL" SHUTDOWN NOSAVE
-  printf 'Restored. Redis will reload from RDB on restart.\n'
+  echo "Restored. Redis will reload from RDB on restart."
+  echo "Note: Re-enable AOF after restart if needed: CONFIG SET appendonly yes"
 }
 
 create_snapshot() {
