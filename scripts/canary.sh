@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # MSG-1775: end-to-end synthetic checks for the outbound Rspamd policy.
-# MSG-1782: deterministic-reject rollout canaries.
+# MSG-1782/MSG-1785: shared rollout canaries for every KumoMTA scan mode.
 # Runs inside the messaging-email-scanner image (rspamc is provided by Rspamd).
 set -uo pipefail
 
@@ -9,11 +9,12 @@ RSPAMD_HOST=${RSPAMD_HOST:-messaging-email-scanner}
 RSPAMD_PORT=${RSPAMD_PORT:-11333}
 RSPAMD_TIMEOUT=${RSPAMD_TIMEOUT:-10}
 RSPAMD_SCAN_MODE=${RSPAMD_SCAN_MODE:-baseline}
+OPENPHISH_TEST_URL=${OPENPHISH_TEST_URL:-}
 CANARY_MODE=$RSPAMD_SCAN_MODE
 export RSPAMD_SCAN_MODE
 
 usage() {
-  printf 'Usage: %s [--mode deterministic_reject]\n' "${0##*/}"
+  printf 'Usage: %s [--mode shadow|quarantine|deterministic_reject|score_reject]\n' "${0##*/}"
 }
 
 while (($# > 0)); do
@@ -41,11 +42,14 @@ while (($# > 0)); do
   esac
 done
 
-if [[ "$CANARY_MODE" != "baseline" && "$CANARY_MODE" != "deterministic_reject" ]]; then
-  printf '%s: unsupported mode: %s\n' "${0##*/}" "$CANARY_MODE" >&2
-  usage >&2
-  exit 2
-fi
+case "$CANARY_MODE" in
+  baseline|shadow|quarantine|deterministic_reject|score_reject) ;;
+  *)
+    printf '%s: unsupported mode: %s\n' "${0##*/}" "$CANARY_MODE" >&2
+    usage >&2
+    exit 2
+    ;;
+esac
 
 TMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TMP_DIR"' EXIT
@@ -74,6 +78,7 @@ log_result() {
 
 scan_message() {
   local fixture=$1
+  local inline_settings=${2:-}
   local -a args=(
     -h "$RSPAMD_HOST:$RSPAMD_PORT"
     -t "$RSPAMD_TIMEOUT"
@@ -82,6 +87,10 @@ scan_message() {
     -r "canary@example.com"
     --header "Settings-ID: outbound"
   )
+
+  if [[ -n "$inline_settings" ]]; then
+    args+=(--header "Settings: $inline_settings")
+  fi
 
   "$RSPAMC_BIN" "${args[@]}" "$fixture" 2>&1
 }
@@ -92,6 +101,16 @@ extract_action() {
 
 extract_score() {
   printf '%s\n' "$1" | sed -n 's/^Score:[[:space:]]*\([-+0-9.]*\).*/\1/p' | head -n 1
+}
+
+has_symbol() {
+  local output=$1
+  local symbol=$2
+  printf '%s\n' "$output" | grep -Eq "(^|[^[:alnum:]_])${symbol}([^[:alnum:]_]|$)"
+}
+
+is_positive_score_below_reject() {
+  [[ "$1" =~ ^((0[.][0-9]*[1-9][0-9]*)|([1-9]|1[0-4])([.][0-9]+)?)$ ]]
 }
 
 run_clean_canary() {
@@ -117,7 +136,9 @@ run_clean_canary() {
 run_spam_canary() {
   local output action expected
   expected="reject or add header"
-  if [[ "$CANARY_MODE" == "deterministic_reject" ]]; then expected="reject"; fi
+  if [[ "$CANARY_MODE" == "deterministic_reject" || "$CANARY_MODE" == "score_reject" ]]; then
+    expected="reject"
+  fi
 
   if ! output=$(scan_message "$TMP_DIR/spam.eml"); then
     log_result spam fail "$expected" unavailable "rspamc request failed"
@@ -125,12 +146,12 @@ run_spam_canary() {
   fi
 
   action=$(extract_action "$output")
-  if [[ "$CANARY_MODE" == "baseline" && ("$action" == "reject" || "$action" == "add header") ]]; then
-    log_result spam pass "$expected" "$action" "GTUBE detected"
+  if [[ "$expected" == "reject" && "$action" == "reject" ]]; then
+    log_result spam pass "$expected" "$action" "GTUBE exercised the basic Rspamd reject path"
     return 0
   fi
-  if [[ "$CANARY_MODE" == "deterministic_reject" && "$action" == "reject" ]]; then
-    log_result spam pass "$expected" "$action" "GTUBE deterministic canary rejected"
+  if [[ "$expected" == "reject or add header" && ("$action" == "reject" || "$action" == "add header") ]]; then
+    log_result spam pass "$expected" "$action" "GTUBE detected"
     return 0
   fi
 
@@ -139,21 +160,28 @@ run_spam_canary() {
 }
 
 run_medium_score_canary() {
-  local output action score
+  local output action score settings
+  settings=""
 
-  if ! output=$(scan_message "$TMP_DIR/medium-score.eml"); then
+  if [[ "$CANARY_MODE" == "score_reject" ]]; then
+    # Keep this threshold canary deterministic without changing the deployed
+    # outbound profile: the Settings override applies only to this rspamc call.
+    settings='{"symbols":{"MISSING_DATE":8.0},"symbols_enabled":["MISSING_DATE"],"actions":{"reject":15.0,"add header":6.0,"greylist":null,"rewrite subject":null}}'
+  fi
+
+  if ! output=$(scan_message "$TMP_DIR/medium-score.eml" "$settings"); then
     log_result medium_score fail "accept" unavailable "rspamc request failed"
     return 1
   fi
 
   action=$(extract_action "$output")
   score=$(extract_score "$output")
-  if [[ ("$action" == "no action" || "$action" == "add header") && "$score" =~ ^((0[.][0-9]*[1-9][0-9]*)|([1-9]|1[0-4])([.][0-9]+)?)$ ]]; then
-    log_result medium_score pass "accept" "$action" "moderate score ${score} observed without rejection"
+  if [[ ("$action" == "no action" || "$action" == "add header") ]] && is_positive_score_below_reject "$score"; then
+    log_result medium_score pass "accept" "$action" "moderate score ${score} remained below reject threshold"
     return 0
   fi
 
-  log_result medium_score fail "accept" "${action:-missing}" "expected a non-reject action below score 15, got score ${score:-missing}"
+  log_result medium_score fail "accept" "${action:-missing}" "expected a non-reject action with score between 0 and 15, got ${score:-missing}"
   return 1
 }
 
@@ -165,12 +193,36 @@ run_phishing_canary() {
   fi
 
   action=$(extract_action "$output")
-  if printf '%s\n' "$output" | grep -Eq '(^|[^[:alnum:]_])OPENPHISH_CANARY([^[:alnum:]_]|$)'; then
-    log_result phishing pass "OPENPHISH_CANARY symbol" "${action:-missing}" "deterministic phishing URL detected"
+  if has_symbol "$output" OPENPHISH_CANARY; then
+    log_result phishing pass "OPENPHISH_CANARY symbol" "${action:-missing}" "stable scanner phishing canary detected"
     return 0
   fi
 
   log_result phishing fail "OPENPHISH_CANARY symbol" "${action:-missing}" "expected symbol missing"
+  return 1
+}
+
+run_deterministic_phishing_canary() {
+  local output action score
+
+  if [[ -z "$OPENPHISH_TEST_URL" ]]; then
+    log_result deterministic_phishing fail "reject" unavailable "OPENPHISH_TEST_URL must name a URL in the running OpenPhish feed"
+    return 1
+  fi
+
+  if ! output=$(scan_message "$TMP_DIR/deterministic-phishing.eml"); then
+    log_result deterministic_phishing fail "reject" unavailable "rspamc request failed"
+    return 1
+  fi
+
+  action=$(extract_action "$output")
+  score=$(extract_score "$output")
+  if [[ "$action" == "add header" ]] && is_positive_score_below_reject "$score" && has_symbol "$output" PHISHED_OPENPHISH; then
+    log_result deterministic_phishing pass "reject" "$action" "PHISHED_OPENPHISH at score ${score}; KumoMTA deterministic mapping must reject"
+    return 0
+  fi
+
+  log_result deterministic_phishing fail "reject" "${action:-missing}" "expected PHISHED_OPENPHISH with add-header action below score 15, got score ${score:-missing}"
   return 1
 }
 
@@ -201,12 +253,13 @@ EOF
 cat >"$TMP_DIR/medium-score.eml" <<'EOF'
 From: Telnyx Canary <canary@msgtelnyx.com>
 To: Scanner Canary <canary@example.com>
+Message-ID: <medium-score-canary@msgtelnyx.com>
 Subject: Telnyx scanner medium-score canary
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 
-Synthetic moderate-score canary. The intentionally missing Date and Message-ID
-headers activate low-confidence checks while remaining below the reject level.
+Synthetic moderate-score canary. The intentionally missing Date header activates
+MISSING_DATE while remaining below the reject level.
 EOF
 
 cat >"$TMP_DIR/phishing.eml" <<'EOF'
@@ -221,11 +274,29 @@ Content-Type: text/html; charset=UTF-8
 <html><body><a href="https://scan-canary-phish.msgtelnyx.com/login">Verify your account</a></body></html>
 EOF
 
-if [[ "$CANARY_MODE" == "baseline" ]]; then
-  canaries=(clean spam phishing)
-else
-  canaries=(spam clean medium_score)
-fi
+cat >"$TMP_DIR/deterministic-phishing.eml" <<EOF
+From: Telnyx Canary <canary@msgtelnyx.com>
+To: Scanner Canary <canary@example.com>
+Date: Mon, 10 Aug 2026 12:00:00 +0000
+Message-ID: <deterministic-phishing-canary@msgtelnyx.com>
+Subject: Telnyx scanner deterministic phishing canary
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+
+<html><body><a href="$OPENPHISH_TEST_URL">Verify your account</a></body></html>
+EOF
+
+case "$CANARY_MODE" in
+  baseline|shadow|quarantine)
+    canaries=(clean spam phishing)
+    ;;
+  deterministic_reject)
+    canaries=(spam clean medium_score deterministic_phishing)
+    ;;
+  score_reject)
+    canaries=(spam medium_score clean)
+    ;;
+esac
 
 for canary in "${canaries[@]}"; do
   if "run_${canary}_canary"; then
