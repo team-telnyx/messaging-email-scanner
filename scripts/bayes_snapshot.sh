@@ -28,7 +28,7 @@ restore_snapshot() {
   fi
 
   echo "Restoring Bayes from $snapshot_file..."
-  # Disable AOF before flushing to prevent the FLUSHDB from being persisted
+  # Disable AOF so FLUSHDB isn't persisted to AOF
   "$REDIS_CLI_BIN" -u "$REDIS_URL" CONFIG SET appendonly no
   "$REDIS_CLI_BIN" -u "$REDIS_URL" FLUSHDB
   "$REDIS_CLI_BIN" -u "$REDIS_URL" SHUTDOWN NOSAVE
@@ -39,9 +39,21 @@ restore_snapshot() {
   
   # Copy the RDB snapshot
   cp "$snapshot_file" "${REDIS_DATA_DIR:-/data}/dump.rdb"
-  echo "Restored. Restart Redis with --appendonly no to load the RDB."
-  echo "After restart, re-enable AOF: redis-cli CONFIG SET appendonly yes"
-  echo "This ensures Redis loads the RDB first, then creates a fresh AOF from it."
+  
+  # Temporarily disable AOF in redis.conf so supervisor restart loads RDB
+  # The supervisor (Docker/k8s) restarts Redis with the config file,
+  # so we must change the config file, not just runtime CONFIG SET
+  REDIS_CONF="${REDIS_CONF_PATH:-${REDIS_DATA_DIR:-/data}/../redis.conf}"
+  if [ -f "$REDIS_CONF" ]; then
+    sed -i 's/^appendonly yes/appendonly no/' "$REDIS_CONF"
+    echo "AOF disabled in $REDIS_CONF — Redis will restart and load the RDB snapshot."
+    echo "After verifying the restore, re-enable AOF:"
+    echo "  sed -i 's/^appendonly no/appendonly yes/' $REDIS_CONF && redis-cli CONFIG SET appendonly yes"
+  else
+    echo "WARNING: redis.conf not found at $REDIS_CONF"
+    echo "Restart Redis with --appendonly no to load the RDB."
+    echo "After restart, re-enable AOF: redis-cli CONFIG SET appendonly yes"
+  fi
 }
 
 create_snapshot() {
