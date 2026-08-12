@@ -224,9 +224,10 @@ if [[ "$restart_count_before" != "$restart_count_after" ]]; then
   fail 'hot-reload: restart count changed (container restarted)'
 fi
 
-# Test 6: entrypoint refresh loop — verify the background scheduler in entrypoint.sh
-# populates the blocklist automatically without manual script invocation.
-# Start a new scanner with a short refresh interval and mounted feeds.
+# Test 6: entrypoint refresh loop — verify the background scheduler (NOT the initial
+# startup refresh) populates the blocklist. Start with EMPTY feeds, verify the
+# symbol is absent, then swap the feeds to contain the target URL and let the
+# entrypoint's recurring loop pick it up.
 CONTAINER2="url-blocklist-test-loop-$$"
 TMP_DIR2=$(mktemp -d "$REPO_ROOT/.url-blocklist-test2.XXXXXX")
 cleanup2() {
@@ -235,25 +236,32 @@ cleanup2() {
 }
 trap 'cleanup; cleanup2' EXIT
 
-# Prepare feed files and empty map in the writable map dir
+# Prepare EMPTY feed files and empty map
 mkdir -p "$TMP_DIR2/maps"
 : >"$TMP_DIR2/maps/url_blocklist.map"
-cat >"$TMP_DIR2/openphish.txt" <<EOF
+: >"$TMP_DIR2/openphish.txt"
+cat >"$TMP_DIR2/urlhaus.csv" <<EOF
+################################################################
+# id,dateadded,url,url_status,last_online,threat,tags,urlhaus_link,reporter
+EOF
+
+# Prepare populated feed files (to swap in after startup)
+cat >"$TMP_DIR2/openphish_populated.txt" <<EOF
 $OPENPHISH_URL
 EOF
-cat >"$TMP_DIR2/urlhaus.csv" <<EOF
+cat >"$TMP_DIR2/urlhaus_populated.csv" <<EOF
 ################################################################
 # id,dateadded,url,url_status,last_online,threat,tags,urlhaus_link,reporter
 "1","2026-08-11 12:00:00","$URLHAUS_URL","online","2026-08-11 12:00:00","malware_download","test","https://urlhaus.abuse.ch/url/1/","test"
 EOF
 
-# Start scanner with the entrypoint refresh loop enabled and a 2-second interval
+# Start scanner with empty feeds and a 2-second refresh interval
 docker rm -f "$CONTAINER2" >/dev/null 2>&1 || true
 docker run -d \
   --name "$CONTAINER2" \
   --mount "type=bind,src=$TMP_DIR2/maps,dst=/etc/rspamd/local.d/maps.d" \
-  --mount "type=bind,src=$TMP_DIR2/openphish.txt,dst=/tmp/openphish.txt,readonly" \
-  --mount "type=bind,src=$TMP_DIR2/urlhaus.csv,dst=/tmp/urlhaus.csv,readonly" \
+  --mount "type=bind,src=$TMP_DIR2/openphish.txt,dst=/tmp/openphish.txt" \
+  --mount "type=bind,src=$TMP_DIR2/urlhaus.csv,dst=/tmp/urlhaus.csv" \
   -e RSPAMD_LOGGING_LEVEL=info \
   -e RSPAMD_CONTROLLER_PASSWORD=local-read-only \
   -e RSPAMD_CONTROLLER_ENABLE_PASSWORD=local-enable \
@@ -275,9 +283,22 @@ for attempt in $(seq 1 30); do
   sleep 1
 done
 
-# Poll for the symbol (the entrypoint loop should refresh after 2 seconds)
+# Verify the blocklist symbol is ABSENT with empty feeds
+docker exec -i "$CONTAINER2" rspamc -h 127.0.0.1:11333 \
+  --header 'Settings-ID: outbound' <"$TMP_DIR/openphish.eml" >"$TMP_DIR2/preloop.out"
+assert_symbol_absent "$TMP_DIR2/preloop.out"
+
+# Record container identity before the loop refresh
+container2_id_before=$(docker inspect --format '{{.Id}}' "$CONTAINER2")
+container2_pid_before=$(docker inspect --format '{{.State.Pid}}' "$CONTAINER2")
+
+# Swap the feed files to contain the target URLs (writable mounts)
+cp "$TMP_DIR2/openphish_populated.txt" "$TMP_DIR2/openphish.txt"
+cp "$TMP_DIR2/urlhaus_populated.csv" "$TMP_DIR2/urlhaus.csv"
+
+# Poll for the symbol (the entrypoint loop should refresh after ~2 seconds)
 loop_ok=0
-for attempt in $(seq 1 15); do
+for attempt in $(seq 1 20); do
   docker exec -i "$CONTAINER2" rspamc -h 127.0.0.1:11333 \
     --header 'Settings-ID: outbound' <"$TMP_DIR/openphish.eml" >"$TMP_DIR2/loop.out"
   if grep -Eq 'PHISHED_URL_BLOCKLIST' "$TMP_DIR2/loop.out"; then
@@ -291,6 +312,16 @@ if [[ "$loop_ok" != "1" ]]; then
   docker logs "$CONTAINER2" >&2 2>/dev/null || true
   sed 's/^/  /' "$TMP_DIR2/loop.out" >&2
   fail 'entrypoint loop: PHISHED_URL_BLOCKLIST not detected after scheduled refresh'
+fi
+
+# Verify container identity is unchanged (no restart from the loop)
+container2_id_after=$(docker inspect --format '{{.Id}}' "$CONTAINER2")
+container2_pid_after=$(docker inspect --format '{{.State.Pid}}' "$CONTAINER2")
+if [[ "$container2_id_before" != "$container2_id_after" ]]; then
+  fail 'entrypoint loop: container ID changed'
+fi
+if [[ "$container2_pid_before" != "$container2_pid_after" ]]; then
+  fail 'entrypoint loop: Rspamd PID changed'
 fi
 
 printf 'url_blocklist_test: PASS\n'
