@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # MSG-1847: Integration test for homoglyph/lookalike domain detection
-# Verifies that homoglyph domains fire LOOKALIKE_DOMAIN and legitimate domains don't
+# Verifies that homoglyph domains fire LOOKALIKE_DOMAIN and legitimate domains don't.
+# Uses real .com domains (not .example) so the test is mutation-sensitive.
 set -euo pipefail
 
 REPO_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
@@ -50,63 +51,64 @@ scan() {
     --header 'Settings-ID: outbound' <"$fixture"
 }
 
-# Test 1: Homoglyph domain (micros0ft) should trigger LOOKALIKE_DOMAIN
-cat >"$TMP_DIR/homoglyph.eml" <<'EOF'
-From: sender@micros0ft-share.example
+# Test 1: Homoglyph domain (micros0ft.com) — URL only, no From match
+cat >"$TMP_DIR/homoglyph_url.eml" <<'EOF'
+From: sender@example.org
 To: victim@example.net
 Date: Tue, 12 Aug 2026 12:00:00 +0000
 Subject: Shared document
-Message-ID: <homoglyph1@test.example>
+Message-ID: <homoglyph-url@test>
 MIME-Version: 1.0
-Content-Type: text/html; charset=UTF-8
+Content-Type: text/plain
 
-<html><body>
-<p><a href="https://micros0ft-share.example/view">Open document</a></p>
-</body></html>
+Click here: https://micros0ft.com/view?doc=xyz
 EOF
 
-scan "$TMP_DIR/homoglyph.eml" >"$TMP_DIR/homoglyph.out" 2>&1
-if ! grep -Eq 'LOOKALIKE_DOMAIN' "$TMP_DIR/homoglyph.out"; then
-  sed 's/^/  /' "$TMP_DIR/homoglyph.out" >&2
-  fail 'expected LOOKALIKE_DOMAIN for micros0ft homoglyph domain'
+scan "$TMP_DIR/homoglyph_url.eml" >"$TMP_DIR/homoglyph_url.out" 2>&1
+if ! grep -Eq 'LOOKALIKE_DOMAIN' "$TMP_DIR/homoglyph_url.out"; then
+  sed 's/^/  /' "$TMP_DIR/homoglyph_url.out" >&2
+  fail 'expected LOOKALIKE_DOMAIN for URL micros0ft.com (homoglyph 0->o)'
 fi
 
-# Test 2: Levenshtein lookalike (paypall.com) should trigger LOOKALIKE_DOMAIN
-cat >"$TMP_DIR/levenshtein.eml" <<'EOF'
-From: sender@paypall.example
+# Test 2: Levenshtein lookalike (paypall.com) — URL only
+cat >"$TMP_DIR/levenshtein_url.eml" <<'EOF'
+From: sender@example.org
 To: victim@example.net
 Date: Tue, 12 Aug 2026 12:00:00 +0000
 Subject: Verify account
-Message-ID: <levenshtein1@test.example>
+Message-ID: <levenshtein-url@test>
 MIME-Version: 1.0
 Content-Type: text/plain
 
-Please verify your account at https://paypall.example/verify
+Please verify at https://paypall.com/verify
 EOF
 
-scan "$TMP_DIR/levenshtein.eml" >"$TMP_DIR/levenshtein.out" 2>&1
-if ! grep -Eq 'LOOKALIKE_DOMAIN' "$TMP_DIR/levenshtein.out"; then
-  sed 's/^/  /' "$TMP_DIR/levenshtein.out" >&2
-  fail 'expected LOOKALIKE_DOMAIN for paypall.com (Levenshtein distance 1 from paypal)'
+scan "$TMP_DIR/levenshtein_url.eml" >"$TMP_DIR/levenshtein_url.out" 2>&1
+if ! grep -Eq 'LOOKALIKE_DOMAIN' "$TMP_DIR/levenshtein_url.out"; then
+  sed 's/^/  /' "$TMP_DIR/levenshtein_url.out" >&2
+  fail 'expected LOOKALIKE_DOMAIN for URL paypall.com (Levenshtein distance 1 from paypal)'
 fi
 
-# Test 3: Official brand subdomain (apps.apple.com) must NOT trigger LOOKALIKE_DOMAIN
+# Test 3: Official brand subdomain (apps.apple.com) must NOT trigger
+# "apps" is distance 2 from "apple" but it's a legitimate subdomain.
+# This test MUST FAIL against the R2-broken implementation (d00e94b) where
+# Levenshtein was applied to ALL subdomain labels.
 cat >"$TMP_DIR/brand_subdomain.eml" <<'EOF'
-From: sender@apple.example
+From: sender@example.org
 To: victim@example.net
 Date: Tue, 12 Aug 2026 12:00:00 +0000
-Subject: App Store
-Message-ID: <brandsub1@test.example>
+Subject: App Store link
+Message-ID: <brand-sub@test>
 MIME-Version: 1.0
 Content-Type: text/plain
 
-Download from https://apps.apple.example/us/app/id123456
+Download from https://apps.apple.com/us/app/id123456
 EOF
 
 scan "$TMP_DIR/brand_subdomain.eml" >"$TMP_DIR/brand_subdomain.out" 2>&1
 if grep -Eq 'LOOKALIKE_DOMAIN' "$TMP_DIR/brand_subdomain.out"; then
   sed 's/^/  /' "$TMP_DIR/brand_subdomain.out" >&2
-  fail 'apps.apple.com should NOT trigger LOOKALIKE_DOMAIN (legitimate brand subdomain)'
+  fail 'apps.apple.com should NOT trigger LOOKALIKE_DOMAIN (legitimate Apple subdomain)'
 fi
 
 # Test 4: Non-brand domain must NOT trigger
@@ -115,7 +117,7 @@ From: sender@example.org
 To: victim@example.net
 Date: Tue, 12 Aug 2026 12:00:00 +0000
 Subject: Hello
-Message-ID: <clean1@test.example>
+Message-ID: <clean@test>
 MIME-Version: 1.0
 Content-Type: text/plain
 
