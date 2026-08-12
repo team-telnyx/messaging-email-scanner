@@ -18,7 +18,7 @@ KumoMTA (http_message_generated)
     ▼
 Rspamd Scanner (port 11333, private)
     ├── Bayes classifier (Redis backend)
-    ├── OpenPhish feed (phishing URLs)
+    ├── OpenPhish + URLhaus live URL blocklist (multimap)
     ├── Obfuscated spam text map (regexp multimap)
     ├── IDN homograph map (regexp multimap)
     ├── Lookalike domain map (multimap)
@@ -69,6 +69,10 @@ RSPAMD_HOST=127.0.0.1 scripts/canary.sh
 # Exercise custom text and IDN homograph rules against the live scanner
 tests/obfuscated_text_test.sh
 tests/idn_homograph_test.sh
+
+# Refresh and exercise the OpenPhish + URLhaus URL blocklist
+docker compose exec rspamd /scripts/refresh_url_blocklist.sh
+tests/url_blocklist_test.sh
 ```
 
 See [`docs/custom-rules.md`](docs/custom-rules.md) for the detected patterns,

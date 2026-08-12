@@ -35,7 +35,8 @@ COPY --chown=11333:11333 scripts/healthcheck.sh /healthcheck.sh
 COPY --chown=11333:11333 scripts/bayes_health_check.sh /scripts/bayes_health_check.sh
 COPY --chown=11333:11333 scripts/seed-bayes.sh /scripts/seed-bayes.sh
 COPY --chown=11333:11333 scripts/canary.sh /scripts/canary.sh
-RUN chmod +x /entrypoint.sh /healthcheck.sh /scripts/bayes_health_check.sh /scripts/seed-bayes.sh /scripts/canary.sh
+COPY --chown=11333:11333 scripts/refresh_url_blocklist.sh /scripts/refresh_url_blocklist.sh
+RUN chmod +x /entrypoint.sh /healthcheck.sh /scripts/bayes_health_check.sh /scripts/seed-bayes.sh /scripts/canary.sh /scripts/refresh_url_blocklist.sh
 
 # Switch back to Rspamd user
 USER 11333:11333

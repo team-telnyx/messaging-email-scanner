@@ -1,3 +1,8 @@
 # Load the custom MSG-1797 OCR module options. Rspamd only includes local.d
 # files for built-in modules automatically; OCR is a repository-owned plugin.
-.include(try=false, priority=10) "$LOCAL_CONFDIR/local.d/ocr.conf"
+.include(try=false; priority=10) "$LOCAL_CONFDIR/local.d/ocr.conf"
+
+# MSG-1829 uses a dedicated file so the live URL blocklist rule and its map
+# lifecycle remain independent of the repository's static multimap rules. Merge
+# it with the multimap module rather than replacing its existing rule set.
+.include(try=false; priority=10; duplicate=merge) "$LOCAL_CONFDIR/local.d/url_blocklist.conf"

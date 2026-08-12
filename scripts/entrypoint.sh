@@ -20,6 +20,29 @@ fi
 CONTROLLER_PASSWORD_HASH=$(rspamadm pw -e -p "${RSPAMD_CONTROLLER_PASSWORD}")
 CONTROLLER_ENABLE_PASSWORD_HASH=$(rspamadm pw -e -p "${RSPAMD_CONTROLLER_ENABLE_PASSWORD}")
 
+# Initial URL blocklist population (MSG-1829)
+# Downloads OpenPhish + URLhaus feeds so the blocklist is active on first scan.
+if [ -x /scripts/refresh_url_blocklist.sh ]; then
+  echo "Populating URL blocklist from OpenPhish + URLhaus..."
+  RSPAMD_RELOAD=0 /scripts/refresh_url_blocklist.sh || \
+    echo "WARNING: initial URL blocklist refresh failed; blocklist will be empty until next scheduled refresh"
+fi
+
+# Start background URL blocklist refresh loop (MSG-1829)
+# OpenPhish updates hourly, URLhaus updates daily. Refresh hourly to stay current.
+URL_BLOCKLIST_REFRESH_INTERVAL=${URL_BLOCKLIST_REFRESH_INTERVAL:-3600}
+if [ -x /scripts/refresh_url_blocklist.sh ] && [ "${URL_BLOCKLIST_REFRESH_ENABLED:-1}" = "1" ]; then
+  (
+    while true; do
+      sleep "$URL_BLOCKLIST_REFRESH_INTERVAL"
+      echo "Refreshing URL blocklist..."
+      /scripts/refresh_url_blocklist.sh || \
+        echo "WARNING: URL blocklist refresh failed; using stale data"
+    done
+  ) &
+  echo "Started URL blocklist refresh loop (interval: ${URL_BLOCKLIST_REFRESH_INTERVAL}s)"
+fi
+
 # Start Rspamd with injected password hashes and logging level
 exec rspamd -f \
   --var=CONTROLLER_PASSWORD_HASH="${CONTROLLER_PASSWORD_HASH}" \
