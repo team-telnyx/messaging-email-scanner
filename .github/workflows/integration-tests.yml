@@ -1,0 +1,17 @@
+name: Integration Tests
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  html-link-extraction:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run HTML link extraction integration test
+        run: |
+          docker build -t messaging-email-scanner:html-link-test .
+          HTML_LINK_SKIP_BUILD=1 bash tests/html_link_extraction_test.sh
