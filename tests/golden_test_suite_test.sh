@@ -108,6 +108,10 @@ case "$cmd" in
     if [[ "$subcmd" == "stat" ]]; then
       echo "Messages learned: 50"
       echo "Total learns: 50"
+      echo "Statfile: BAYES_SPAM"
+      echo "learned: 25"
+      echo "Statfile: BAYES_HAM"
+      echo "learned: 25"
       exit 0
     fi
     if [[ "$subcmd" == "learn_spam" || "$subcmd" == "learn_ham" ]]; then
@@ -124,8 +128,11 @@ case "$cmd" in
       elif [[ "$mode" == "fp_stress_no_symbol" ]]; then
         printf 'Results for file: stdin\nAction: add header\nScore: 10.50 / 15.00\nSymbol: BEC_PATTERN (7.00)\nSymbol: OCR_SKIPPED (0.00)\n'
       else
-        printf 'Results for file: stdin\nAction: add header\nScore: 10.50 / 15.00\nSymbol: BEC_PATTERN (7.00)\nSymbol: LOOKALIKE_DOMAIN (6.00)\nSymbol: OCR_SKIPPED (0.00)\n'
+        printf 'Results for file: stdin\nAction: add header\nScore: 10.50 / 15.00\nSymbol: BAYES_SPAM (5.00)\nSymbol: BEC_PATTERN (7.00)\nSymbol: LOOKALIKE_DOMAIN (6.00)\nSymbol: OCR_SKIPPED (0.00)\n'
       fi
+    elif echo "$input" | grep -q "URGENT\|spam-test\|canary"; then
+      # Bayes canary: should emit BAYES symbol
+      printf 'Results for file: stdin\nAction: add header\nScore: 10.50 / 15.00\nSymbol: BAYES_SPAM (5.00)\nSymbol: OCR_SKIPPED (0.00)\n'
     elif echo "$input" | grep -q "Stress"; then
       mode="${FAKE_SCAN_MODE:-all_pass}"
       if [[ "$mode" == "fp_stress_no_symbol" ]]; then
@@ -198,13 +205,13 @@ assert "runner exits non-zero with orphan .expected" \
 assert "output mentions orphan" \
   "grep -qi 'orphan' '$TMP_DIR/output.txt'"
 
-# Test 5: Reduced corpus inventory
-printf '\nTest 5: Reduced corpus inventory detection\n'
+# Test 5: Reduced corpus inventory (paired deletion — both .eml and .expected)
+printf '\nTest 5: Reduced corpus inventory detection (paired deletion)\n'
 setup_fake_corpus
-rm "$TMP_DIR/corpus/attacks/phishing/01_attack.eml"
+rm "$TMP_DIR/corpus/attacks/phishing/01_attack.eml" "$TMP_DIR/corpus/attacks/phishing/01_attack.expected"
 exit_code=0
 bash "$REPO_ROOT/tests/golden_test_suite.sh" >"$TMP_DIR/output.txt" 2>&1 || exit_code=$?
-assert "runner exits non-zero with reduced corpus" \
+assert "runner exits non-zero with paired deletion (51 attacks)" \
   "[ $exit_code -ne 0 ]"
 
 # Test 6: All pass (positive control)
@@ -235,6 +242,69 @@ export GOLDEN_SKIP_BUILD=1
 exit_code=0
 bash "$REPO_ROOT/tests/golden_test_suite.sh" >"$TMP_DIR/output.txt" 2>&1 || exit_code=$?
 assert "runner exits non-zero when fp_stress target symbol missing" \
+  "[ $exit_code -ne 0 ]"
+
+# Test 8: Bayes fail-open regression — stat returns 0 learned
+printf '\nTest 8: Bayes fail-open detection (stat returns 0)\n'
+setup_fake_corpus
+fake_bin=$(create_fake_docker)
+# Create a variant fake docker that returns 0 learned for stat
+cat >"$TMP_DIR/fake_bin/docker" <<'BAYES_FAIL_EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+cmd="${1:-}"; shift || true
+case "$cmd" in
+  build) exit 0 ;; network) exit 0 ;; rm) exit 0 ;; logs) exit 0 ;;
+  run) echo "fake_container" ;;
+  inspect) echo "healthy" ;;
+  exec)
+    while [[ "${1:-}" == "-i" || "${1:-}" == "-P" ]]; do
+      [[ "${1:-}" == "-P" ]] && { shift; shift; continue; }
+      shift
+    done
+    container="${1:-}"; shift || true
+    rspamc="${1:-}"; shift || true
+    if [[ "$rspamc" != "rspamc" ]]; then exit 0; fi
+    while [[ "${1:-}" == -* ]]; do
+      case "$1" in -h) shift 2 ;; -P) shift 2 ;; --header) shift 2 ;; *) shift ;; esac
+    done
+    subcmd="${1:-}"; shift || true
+    if [[ "$subcmd" == "stat" ]]; then
+      echo "Messages learned: 0"
+      echo "Statfile: BAYES_SPAM"
+      echo "learned: 0"
+      echo "Statfile: BAYES_HAM"
+      echo "learned: 0"
+      exit 0
+    fi
+    if [[ "$subcmd" == "learn_spam" || "$subcmd" == "learn_ham" ]]; then
+      cat >/dev/null; exit 0
+    fi
+    # Scan — return output WITHOUT BAYES symbol (canary will fail)
+    input=$(cat)
+    printf 'Results for file: stdin\nAction: add header\nScore: 5.00 / 15.00\nSymbol: OCR_SKIPPED (0.00)\n'
+    exit 0
+    ;;
+esac
+exit 0
+BAYES_FAIL_EOF
+chmod +x "$TMP_DIR/fake_bin/docker"
+export PATH="$TMP_DIR/fake_bin:$PATH"
+export GOLDEN_CORPUS_ROOT="$TMP_DIR/corpus"
+export GOLDEN_SKIP_BUILD=1
+
+exit_code=0
+bash "$REPO_ROOT/tests/golden_test_suite.sh" >"$TMP_DIR/output.txt" 2>&1 || exit_code=$?
+assert "runner exits non-zero when Bayes canary fails (no BAYES symbol)" \
+  "[ $exit_code -ne 0 ]"
+
+# Test 9: Paired deletion of legitimate fixture
+printf '\nTest 9: Paired deletion of legitimate fixture\n'
+setup_fake_corpus
+rm "$TMP_DIR/corpus/legitimate/business/01_legit.eml" "$TMP_DIR/corpus/legitimate/business/01_legit.expected"
+exit_code=0
+bash "$REPO_ROOT/tests/golden_test_suite.sh" >"$TMP_DIR/output.txt" 2>&1 || exit_code=$?
+assert "runner exits non-zero with paired legit deletion (54 legit)" \
   "[ $exit_code -ne 0 ]"
 
 # Summary

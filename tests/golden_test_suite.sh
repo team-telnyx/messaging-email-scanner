@@ -260,22 +260,24 @@ done
 [[ "$status" == 'healthy' ]] || fail_infrastructure "scanner did not become healthy (last status: ${status:-unknown})"
 
 # BLOCK 1: Verify Bayes is connected and trained — fail closed if unavailable
+# Must verify BOTH classes (spam and ham) have >= min_learns, not just aggregate count
 printf 'Verifying Bayes classifier...\n'
 bayes_stats=$(docker exec "$CONTAINER" rspamc -h 127.0.0.1:11334 -P golden-read-only stat 2>&1)
 if [[ $? -ne 0 ]]; then
   fail_infrastructure 'could not retrieve Bayes stats from controller'
 fi
 
-# Parse exact learned count
+# Parse aggregate learned count
 learned_count=$(printf '%s' "$bayes_stats" | grep -oE 'Messages learned: *[0-9]+' | grep -oE '[0-9]+' | head -1)
 if [[ -z "$learned_count" ]]; then
   learned_count=0
 fi
-learned_count=$((learned_count + 0))  # Ensure numeric
+learned_count=$((learned_count + 0))
 
+# Train if aggregate is below min_learns. We also track per-class learn counts
+# from the training loop to verify both classes were trained.
 if [[ "$learned_count" -lt 20 ]]; then
-  # Bayes has fewer than min_learns — need to train
-  printf 'Training Bayes classifier (current learned=%d, need >=%d)...\n' "$learned_count" 20
+  printf 'Training Bayes classifier (current aggregate=%d, need >=20)...\n' "$learned_count"
   spam_learned=0
   ham_learned=0
 
@@ -299,11 +301,14 @@ if [[ "$learned_count" -lt 20 ]]; then
 
   printf 'Training complete: %d spam, %d ham learned\n' "$spam_learned" "$ham_learned"
 
-  if [[ "$spam_learned" -lt 20 || "$ham_learned" -lt 20 ]]; then
-    fail_infrastructure "Bayes training failed: learned $spam_learned spam, $ham_learned ham (need >=20 each for min_learns)"
+  if [[ "$spam_learned" -lt 20 ]]; then
+    fail_infrastructure "Bayes training failed: only $spam_learned spam learned (need >=20 for min_learns)"
+  fi
+  if [[ "$ham_learned" -lt 20 ]]; then
+    fail_infrastructure "Bayes training failed: only $ham_learned ham learned (need >=20 for min_learns)"
   fi
 
-  # Re-check stats
+  # Re-check aggregate
   bayes_stats=$(docker exec "$CONTAINER" rspamc -h 127.0.0.1:11334 -P golden-read-only stat 2>&1)
   learned_count=$(printf '%s' "$bayes_stats" | grep -oE 'Messages learned: *[0-9]+' | grep -oE '[0-9]+' | head -1)
   learned_count=${learned_count:-0}
@@ -314,7 +319,38 @@ if [[ "$learned_count" -lt 20 ]]; then
   fail_infrastructure "Bayes classifier has $learned_count learned messages (need >=20). Redis or training may have failed."
 fi
 
-printf 'Bayes classifier ready: %d messages learned\n' "$learned_count"
+# Definitive check: Bayes canary scan must emit a BAYES symbol
+# This proves both classes are trained and the classifier is active
+canary_output=$(docker exec -i "$CONTAINER" rspamc -h 127.0.0.1:11333 --header 'Settings-ID: outbound' <<'CANARY' 2>&1
+From: spam-test@example.org
+To: victim@example.org
+Subject: URGENT: verify your account immediately
+Message-ID: <canary-bayes@test>
+Content-Type: text/plain
+
+Click here to verify: http://evil.example/verify?token=12345
+Your account will be suspended if you do not act now.
+CANARY
+)
+if ! printf '%s' "$canary_output" | grep -qi 'BAYES'; then
+  sleep 5
+  canary_output=$(docker exec -i "$CONTAINER" rspamc -h 127.0.0.1:11333 --header 'Settings-ID: outbound' <<'CANARY2' 2>&1
+From: spam-test@example.org
+To: victim@example.org
+Subject: URGENT: verify your account immediately
+Message-ID: <canary-bayes2@test>
+Content-Type: text/plain
+
+Click here to verify: http://evil.example/verify?token=12345
+Your account will be suspended if you do not act now.
+CANARY2
+)
+  if ! printf '%s' "$canary_output" | grep -qi 'BAYES'; then
+    fail_infrastructure "Bayes canary scan did not emit BAYES symbol — classifier is not active despite training (learned=$learned_count)"
+  fi
+fi
+
+printf 'Bayes classifier ready: %d messages learned, canary active\n' "$learned_count"
 
 printf 'Scanning golden corpus...\n'
 while IFS= read -r eml; do
