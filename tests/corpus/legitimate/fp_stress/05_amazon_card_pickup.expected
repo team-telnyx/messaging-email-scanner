@@ -1,0 +1,3 @@
+action: no_action
+symbols: BEC_PATTERN
+description: Coworker request to pickup gift card for client gift — known FP risk (gift card + pickup + grab trigger pair in workplace context)
