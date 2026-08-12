@@ -61,39 +61,51 @@ local function fake_task(subject, body, headers)
 
   local header_map = headers or {}
 
-  -- Build structured from/reply-to addresses matching Rspamd 3.10.2 API:
-  -- get_from("mime") returns array of {addr=...} from MIME From: header
-  -- get_reply_sender() returns a string from Reply-To: header
-  local from_addr = parse_first_addr(header_map["From"])
-  local reply_sender = parse_reply_sender(header_map["Reply-To"])
+-- Build structured from/reply-to addresses matching Rspamd 3.10.2 API:
+-- get_from("mime") returns array of {addr=...} from MIME From: header
+-- get_from() with no args returns envelope sender (SMTP MAIL FROM)
+-- get_reply_sender() returns a string from Reply-To: header
+local from_addr = parse_first_addr(header_map["From"])
+local reply_sender = parse_reply_sender(header_map["Reply-To"])
+-- Simulate an envelope sender that may differ from MIME From.
+-- If headers["Envelope-From"] is set, get_from() (envelope mode) returns that;
+-- otherwise it returns the same as MIME From.
+local envelope_from = headers and headers["Envelope-From"]
+local envelope_addr = envelope_from and { addr = envelope_from } or from_addr
 
-  return {
-    get_subject = function()
-      return subject
-    end,
-    get_text_parts = function()
-      return { text_part }
-    end,
-    get_text_part = function()
-      return text_part
-    end,
-    get_content = function()
-      return body
-    end,
-    get_header = function(self, name)
-      return header_map[name]
-    end,
-    get_from = function(self, mode)
-      -- Simulate MIME mode returning header addresses
-      if mode == "mime" and from_addr then
+return {
+  get_subject = function()
+    return subject
+  end,
+  get_text_parts = function()
+    return { text_part }
+  end,
+  get_text_part = function()
+    return text_part
+  end,
+  get_content = function()
+    return body
+  end,
+  get_header = function(self, name)
+    return header_map[name]
+  end,
+  get_from = function(self, mode)
+    if mode == "mime" then
+      if from_addr then
         return { from_addr }
       end
       return nil
-    end,
-    get_reply_sender = function()
-      return reply_sender
-    end,
-  }
+    end
+    -- No-arg = envelope sender
+    if envelope_addr then
+      return { envelope_addr }
+    end
+    return nil
+  end,
+  get_reply_sender = function()
+    return reply_sender
+  end,
+}
 end
 
 local function assert_fires(subject, body, label, headers)
@@ -235,6 +247,18 @@ assert_fires(
   "Please process the payment to the new account.",
   "RFC comment in reply-to doesn't bypass mismatch",
   { ["From"] = "<ceo@trusted.com>", ["Reply-To"] = "<fraud@evil.com> (CEO <ceo@trusted.com>)" }
+)
+
+-- R6: Envelope sender matching malicious Reply-To must not suppress MIME mismatch.
+-- MIME From: <ceo@trusted.com>, Reply-To: <fraud@evil.com>, but envelope (SMTP MAIL FROM)
+-- is fraud@evil.com (matching Reply-To). get_from("mime") must be used, not get_from().
+-- If the code reverts to get_from() (envelope), it would see fraud@evil.com which matches
+-- Reply-To and suppress the mismatch. get_from("mime") correctly sees ceo@trusted.com.
+assert_fires(
+  "Re: Payment",
+  "Please process the payment to the new account.",
+  "envelope sender matching Reply-To does not suppress MIME From/Reply-To mismatch",
+  { ["From"] = "<ceo@trusted.com>", ["Reply-To"] = "<fraud@evil.com>", ["Envelope-From"] = "fraud@evil.com" }
 )
 
 print("bec_heuristics_test: PASS")
