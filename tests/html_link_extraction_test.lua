@@ -152,9 +152,8 @@ end
 
 local mismatch = symbols.HTML_LINK_MISMATCH
 assert(mismatch, "HTML_LINK_MISMATCH must be registered")
-eq(mismatch.type, "normal", "registered symbol type")
+eq(mismatch.type, "prefilter", "registered symbol type")
 eq(mismatch.score, 6.0, "registered symbol score")
-eq(dependencies.PHISH_URL_HEURISTIC.HTML_LINK_MISMATCH, true, "phishing heuristic dependency")
 eq(dependencies.PHISHED_URL_BLOCKLIST.HTML_LINK_MISMATCH, true, "blocklist dependency")
 
 -- Displayed paypal.com masks a different destination domain.
@@ -208,5 +207,8 @@ eq(#result.injected, 2, "all anchors injected")
 
 eq(extraction.extract_display_domain("Click here"), nil, "generic text has no display domain")
 eq(extraction.extract_display_domain("Visit PAYPAL.COM now"), "paypal.com", "display domain normalization")
+-- R1 fix: dotted version text must not be treated as a display domain
+eq(extraction.extract_display_domain("Version 1.23 release notes"), nil, "version number is not a domain")
+eq(extraction.extract_display_domain("Build 2.0.14"), nil, "build number is not a domain")
 
 print("html_link_extraction_test: PASS")

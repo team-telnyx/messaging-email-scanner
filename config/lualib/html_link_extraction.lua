@@ -89,10 +89,15 @@ local function valid_domain_candidate(candidate)
     if #label == 0 or #label > 63 or label:match("^%-") or label:match("%-$") then
       return false
     end
+    -- Reject all-numeric labels (e.g. "1.23" is a version, not a domain)
+    if label:match("^%d+$") then
+      return false
+    end
   end
 
   local tld = candidate:match("([^.]+)$")
-  return tld ~= nil and #tld >= 2 and tld:match("^[%a%d%-]+$") ~= nil
+  -- TLD must be at least 2 chars and alphabetic (not numeric)
+  return tld ~= nil and #tld >= 2 and tld:match("^%a[%a%d]*$")
 end
 
 function exports.extract_display_domain(display_text)
@@ -205,7 +210,7 @@ exports.callback = html_link_extraction
 
 rspamd_config:register_symbol({
   name = SYMBOL,
-  type = "normal",
+  type = "prefilter",
   callback = html_link_extraction,
   score = 6.0,
   group = "url",
@@ -214,7 +219,9 @@ rspamd_config:register_symbol({
 
 -- Ensure the existing URL checks see destinations injected by this prefilter,
 -- even when the rendered anchor text is generic (for example, "Click here").
-rspamd_config:register_dependency("PHISH_URL_HEURISTIC", SYMBOL)
+-- HTML_LINK_MISMATCH loads first in rspamd.lua so its prefilter runs before
+-- PHISH_URL_HEURISTIC, making injected URLs available to downstream prefilters.
+-- PHISHED_URL_BLOCKLIST is a multimap (filter stage) that naturally runs after prefilters.
 rspamd_config:register_dependency("PHISHED_URL_BLOCKLIST", SYMBOL)
 
 return exports
