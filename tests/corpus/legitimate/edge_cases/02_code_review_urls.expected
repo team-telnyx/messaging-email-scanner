@@ -1,0 +1,3 @@
+action: no_action
+symbols:    # symbols that must NOT fire (empty = any spam symbol)
+description: Code review notification with URLs in code snippets

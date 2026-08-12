@@ -1,0 +1,22 @@
+From: Security Engineering <security@company.com>
+To: Messaging Engineering <messaging@company.com>
+Date: Wed, 12 Aug 2026 13:10:00 +0000
+Message-ID: <msg1845-050-05_domain_name_discussion@corpus.company.com>
+Subject: Domain allowlist review notes
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+Messaging team,
+
+During today's domain allowlist review, we confirmed that paypal.com and goog=
+le.com are registered brand domains, while subdomains must still be evaluated=
+ using the effective registered domain. The same review covered linkedin.com =
+and amazon.com.
+
+These names are documentation examples, not sign-in instructions. Please add =
+test cases for exact domains and common service hosts before the next rules r=
+elease.
+
+Regards,
+Security Engineering

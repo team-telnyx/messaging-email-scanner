@@ -1,0 +1,23 @@
+From: Northwind Cloud Billing <billing@northwind.company.com>
+To: Accounts Payable <ap@company.com>
+Date: Wed, 12 Aug 2026 09:10:00 +0000
+Message-ID: <msg1845-002-02_vendor_invoice_payment_link@corpus.company.com>
+Subject: Northwind Cloud invoice NW-10482 is ready
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+Hello Accounts Payable,
+
+Invoice NW-10482 for the June managed hosting service is now available. The a=
+mount due is $1,280.00 under our existing NET-30 terms. You can review the it=
+emized invoice and submit payment through our Stripe-hosted billing page:
+
+https://invoice.stripe.com/i/acct_northwind/test_NW10482
+
+This notice corresponds to vendor record NW-0031 and contract MS-2025-18. Que=
+stions may be sent to billing@northwind.company.com or discussed with your us=
+ual account manager, Elena Ruiz.
+
+Regards,
+Northwind Cloud Billing

@@ -1,0 +1,20 @@
+From: Company CI <ci@company.com>
+To: Platform Engineering <platform@company.com>
+Date: Wed, 12 Aug 2026 13:00:00 +0000
+Message-ID: <msg1845-048-03_cicd_build_notification@corpus.company.com>
+Subject: Build #2026.07.14.318 succeeded on main
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+MIME-Version: 1.0
+
+Build #2026.07.14.318 succeeded for commit 7f2c91a on main.
+
+Summary:
+- unit tests: 418 passed
+- integration tests: 37 passed
+- container image: platform-api:1.23.0-rc.2
+
+Build details: https://ci.company.com/builds/2026-07-14-318
+Commit: https://github.com/company/platform-api/commit/7f2c91a
+
+This is an automated CI notification.
