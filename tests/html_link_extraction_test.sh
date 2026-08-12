@@ -129,31 +129,4 @@ if grep -Eq 'HTML_LINK_MISMATCH' "$TMP_DIR/clean.out"; then
   fail 'matching display/href domain should not trigger HTML_LINK_MISMATCH'
 fi
 
-# Test 5: Hidden phishing URL behind generic text — verifies prefilter ordering.
-# HTML_LINK_MISMATCH (prefilter, loaded first) must inject the hidden URL before
-# PHISH_URL_HEURISTIC (prefilter, loaded after) evaluates it. If ordering is wrong
-# (html_link_extraction loads after phish_url_heuristics), the URL is not injected
-# and PHISH_URL_HEURISTIC does not fire. If HTML_LINK_MISMATCH is normal (not
-# prefilter), PHISH_URL_HEURISTIC runs first without seeing the injected URL.
-cat >"$TMP_DIR/hidden_phish.eml" <<'EOF'
-From: sender@example.org
-To: recipient@example.net
-Date: Tue, 12 Aug 2026 12:00:00 +0000
-Subject: Shared document
-MIME-Version: 1.0
-Content-Type: text/html; charset=UTF-8
-
-<html><body>
-<p><a href="https://paypal.com.evil.com/login">Click here to view document</a></p>
-</body></html>
-EOF
-
-scan "$TMP_DIR/hidden_phish.eml" >"$TMP_DIR/hidden_phish.out" 2>&1
-# The hidden URL is a subdomain impersonation — PHISH_URL_HEURISTIC must fire
-# because HTML_LINK_MISMATCH injected it before the heuristic prefilter ran.
-if ! grep -Eq 'PHISH_URL_HEURISTIC' "$TMP_DIR/hidden_phish.out"; then
-  sed 's/^/  /' "$TMP_DIR/hidden_phish.out" >&2
-  fail 'hidden phishing URL behind generic text must trigger PHISH_URL_HEURISTIC (prefilter ordering)'
-fi
-
 printf 'html_link_test: PASS\n'

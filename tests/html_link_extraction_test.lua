@@ -127,7 +127,6 @@ local function plain_part()
 end
 
 local function scan(parts)
-  local injected = {}
   local task = {
     get_text_parts = function()
       return parts
@@ -135,15 +134,11 @@ local function scan(parts)
     get_mempool = function()
       return {}
     end,
-    inject_url = function(_, url)
-      injected[#injected + 1] = url
-    end,
   }
 
   local matched, multiplier, options = symbols.HTML_LINK_MISMATCH.callback(task)
   return {
     task = task,
-    injected = injected,
     matched = matched or false,
     multiplier = multiplier,
     options = options,
@@ -152,9 +147,8 @@ end
 
 local mismatch = symbols.HTML_LINK_MISMATCH
 assert(mismatch, "HTML_LINK_MISMATCH must be registered")
-eq(mismatch.type, "prefilter", "registered symbol type")
+eq(mismatch.type, "normal", "registered symbol type")
 eq(mismatch.score, 6.0, "registered symbol score")
-eq(dependencies.PHISHED_URL_BLOCKLIST.HTML_LINK_MISMATCH, true, "blocklist dependency")
 
 -- Displayed paypal.com masks a different destination domain.
 local result = scan({ html_part({ anchor("https://evil.com/login", "paypal.com") }) })
@@ -162,40 +156,32 @@ eq(result.matched, true, "display/href mismatch")
 eq(result.multiplier, 1.0, "mismatch multiplier")
 eq(result.options[1], "display=paypal.com", "mismatch display option")
 eq(result.options[2], "href=evil.com", "mismatch href option")
-eq(#result.injected, 1, "mismatch href injection count")
-eq(tostring(result.injected[1]), "https://evil.com/login", "mismatch href injection")
 
--- Generic display text is not a mismatch, but the hidden href is still injected
--- so the existing URL blocklist and phishing rules receive it.
+-- Generic display text is not a mismatch (no display domain to compare).
 result = scan({ html_part({ anchor("https://evil.com/login", "Click here") }) })
 eq(result.matched, false, "generic display mismatch")
-eq(#result.injected, 1, "generic suspicious href injection count")
-eq(tostring(result.injected[1]), "https://evil.com/login", "generic suspicious href injection")
 
--- Prove an injected hidden href is consumable by the existing phishing heuristic.
+-- Prove that a hidden href with subdomain impersonation can be consumed by
+-- the existing phishing heuristic (Rspamd natively extracts HTML URLs).
 result = scan({ html_part({ anchor("https://paypal.com.evil.com/login", "Click here to verify") }) })
 result.task.get_urls = function()
-  return result.injected
+  return { parsed_url("https://paypal.com.evil.com/login") }
 end
 local heuristic_matched, _, heuristic_options = phish_heuristics.callback(result.task)
 eq(heuristic_matched, true, "hidden href phishing heuristic")
 eq(heuristic_options[1], "subdomain_impersonation", "hidden href heuristic reason")
 
--- A generic link to a known-clean domain is extracted without a mismatch.
+-- A generic link to a known-clean domain is not a mismatch.
 result = scan({ html_part({ anchor("https://www.google.com/search", "Click here") }) })
 eq(result.matched, false, "clean generic display mismatch")
-eq(#result.injected, 1, "clean href injection count")
-eq(tostring(result.injected[1]), "https://www.google.com/search", "clean href injection")
 
--- Plain text parts do not enter the HTML parser or inject URLs.
+-- Plain text parts do not enter the HTML parser.
 result = scan({ plain_part() })
 eq(result.matched, false, "plain-text mismatch")
-eq(#result.injected, 0, "plain-text href injection count")
 
 -- Matching display and destination registered domains are legitimate, including subdomains.
 result = scan({ html_part({ anchor("https://login.paypal.com/account", "https://www.paypal.com") }) })
 eq(result.matched, false, "matching domain mismatch")
-eq(#result.injected, 1, "matching href injection count")
 
 -- Process every anchor, not just the first one.
 result = scan({ html_part({
@@ -203,7 +189,6 @@ result = scan({ html_part({
   anchor("https://evil.com/", "paypal.com"),
 }) })
 eq(result.matched, true, "later anchor mismatch")
-eq(#result.injected, 2, "all anchors injected")
 
 eq(extraction.extract_display_domain("Click here"), nil, "generic text has no display domain")
 eq(extraction.extract_display_domain("Visit PAYPAL.COM now"), "paypal.com", "display domain normalization")

@@ -144,17 +144,11 @@ local function display_registered_domain(task, display_domain)
   return fallback_registered_domain(display_domain)
 end
 
-local function check_anchor(task, tag, seen_urls)
+local function check_anchor(task, tag)
   local href = tag:get_attribute("href")
   local url = parse_href(task, href)
   if not url then
     return nil
-  end
-
-  local url_text = tostring(url)
-  if not seen_urls[url_text] then
-    task:inject_url(url)
-    seen_urls[url_text] = true
   end
 
   local display_domain = exports.extract_display_domain(tag:get_content())
@@ -176,14 +170,13 @@ end
 
 local function html_link_extraction(task)
   local mismatches = {}
-  local seen_urls = {}
 
   for _, part in ipairs(task:get_text_parts() or {}) do
     if part:is_html() then
       local html = part:get_html()
       if html then
         html:foreach_tag("a", function(tag)
-          local mismatch = check_anchor(task, tag, seen_urls)
+          local mismatch = check_anchor(task, tag)
           if mismatch then
             mismatches[#mismatches + 1] = mismatch
           end
@@ -210,18 +203,11 @@ exports.callback = html_link_extraction
 
 rspamd_config:register_symbol({
   name = SYMBOL,
-  type = "prefilter",
+  type = "normal",
   callback = html_link_extraction,
   score = 6.0,
   group = "url",
   description = "HTML anchor display domain differs from destination domain",
 })
-
--- Ensure the existing URL checks see destinations injected by this prefilter,
--- even when the rendered anchor text is generic (for example, "Click here").
--- HTML_LINK_MISMATCH loads first in rspamd.lua so its prefilter runs before
--- PHISH_URL_HEURISTIC, making injected URLs available to downstream prefilters.
--- PHISHED_URL_BLOCKLIST is a multimap (filter stage) that naturally runs after prefilters.
-rspamd_config:register_dependency("PHISHED_URL_BLOCKLIST", SYMBOL)
 
 return exports
