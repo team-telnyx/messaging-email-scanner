@@ -282,6 +282,19 @@ local function public_suffix(domain)
   return labels[#labels]
 end
 
+-- Extract the registered domain from a hostname (e.g. mail1.company.com → company.com)
+local function registered_domain_from_host(host)
+  local labels = split_labels(host)
+  if #labels < 2 then
+    return host
+  end
+  local suffix = labels[#labels - 1] .. "." .. labels[#labels]
+  if #labels >= 3 and common_multi_label_suffixes[suffix] then
+    return labels[#labels - 2] .. "." .. suffix
+  end
+  return suffix
+end
+
 exports.levenshtein = levenshtein
 exports.brands = brands
 
@@ -299,6 +312,25 @@ local function lookalike_domain(task)
         "brand=" .. brand,
       }
     end
+    -- Also check Levenshtein distance against brand list for non-homoglyph lookalikes
+    -- (e.g. paypall.com → distance 1 from "paypal")
+    for _, label in ipairs(domain_labels(host, registered_domain)) do
+      for _, component in ipairs(label_components(label)) do
+        for _, brand in ipairs(brands) do
+          local distance = levenshtein(component, brand)
+          if distance >= 1 and distance <= 2 then
+            return true, 1.0, {
+              "levenshtein",
+              "source=url",
+              "host=" .. host,
+              "label=" .. component,
+              "brand=" .. brand,
+              "distance=" .. distance,
+            }
+          end
+        end
+      end
+    end
   end
 
   local mime_from_domain = from_domain(task)
@@ -313,22 +345,44 @@ local function lookalike_domain(task)
         "brand=" .. brand,
       }
     end
+    -- Levenshtein check for From domain against brand list
+    local from_labels = domain_labels(mime_from_domain, nil)
+    for _, label in ipairs(from_labels) do
+      for _, component in ipairs(label_components(label)) do
+        for _, brand in ipairs(brands) do
+          local distance = levenshtein(component, brand)
+          if distance >= 1 and distance <= 2 then
+            return true, 1.0, {
+              "levenshtein",
+              "source=from",
+              "host=" .. mime_from_domain,
+              "label=" .. component,
+              "brand=" .. brand,
+              "distance=" .. distance,
+            }
+          end
+        end
+      end
+    end
   end
 
   local mime_reply_to_domain = reply_to_domain(task)
   if mime_from_domain and mime_reply_to_domain and mime_from_domain ~= mime_reply_to_domain then
-    -- Compare close spellings only within the same public suffix. Treating a
-    -- normal TLD change (company.com -> company.co) as a one-edit lookalike
-    -- would make this six-point symbol too noisy.
-    if public_suffix(mime_from_domain) == public_suffix(mime_reply_to_domain) then
-      local distance = levenshtein(mime_from_domain, mime_reply_to_domain)
-      if distance >= 1 and distance <= 2 then
-        return true, 1.0, {
-          "reply_to_distance",
-          "distance=" .. distance,
-          "from=" .. mime_from_domain,
-          "reply_to=" .. mime_reply_to_domain,
-        }
+    -- Compare registered domains (not full hostnames) to avoid false positives
+    -- on legitimate sibling subdomains like mail1.company.com vs mail2.company.com
+    local from_reg = registered_domain_from_host(mime_from_domain)
+    local reply_reg = registered_domain_from_host(mime_reply_to_domain)
+    if from_reg and reply_reg and from_reg ~= reply_reg then
+      if public_suffix(mime_from_domain) == public_suffix(mime_reply_to_domain) then
+        local distance = levenshtein(from_reg, reply_reg)
+        if distance >= 1 and distance <= 2 then
+          return true, 1.0, {
+            "reply_to_distance",
+            "distance=" .. distance,
+            "from=" .. from_reg,
+            "reply_to=" .. reply_reg,
+          }
+        end
       end
     end
   end

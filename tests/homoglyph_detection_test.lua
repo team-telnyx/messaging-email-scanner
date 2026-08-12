@@ -188,4 +188,32 @@ eq(matched, false, "unrelated From/Reply-To domains")
 matched = scan({ from_domain = "company.com", reply_domain = "company.co" })
 eq(matched, false, "TLD-only From/Reply-To difference")
 
+-- R1 fix: Levenshtein distance against brand list (not just hard-coded substitutions)
+-- paypall.com is edit distance 1 from "paypal" — should be caught
+matched, _, options = scan({ url_host = "paypall.com" })
+eq(matched, true, "paypall.com Levenshtein distance 1 from paypal")
+eq(options[1], "levenshtein", "paypall.com detection reason")
+
+-- payypall.com is edit distance 2 from "paypal" — should be caught
+matched, _, options = scan({ url_host = "payypall.com" })
+eq(matched, true, "payypall.com Levenshtein distance 2 from paypal")
+eq(options[1], "levenshtein", "payypall.com detection reason")
+
+-- From domain with Levenshtein match
+matched, _, options = scan({ from_domain = "paypall.com" })
+eq(matched, true, "From paypall.com Levenshtein distance 1")
+
+-- R1 fix: Sibling subdomains must NOT trigger false positives
+-- mail1.company.com vs mail2.company.com should NOT fire (same registered domain)
+matched = scan({ from_domain = "mail1.company.com", reply_domain = "mail2.company.com" })
+eq(matched, false, "sibling subdomains mail1 vs mail2 should not trigger")
+
+-- Legitimate brand domain (exact match) should NOT fire via Levenshtein (distance 0)
+matched = scan({ from_domain = "paypal.com" })
+eq(matched, false, "exact brand domain paypal.com should not trigger")
+
+-- Non-brand domain should NOT fire
+matched = scan({ from_domain = "example.com" })
+eq(matched, false, "non-brand example.com should not trigger")
+
 print("homoglyph_detection_test: PASS")
