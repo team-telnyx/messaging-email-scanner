@@ -141,4 +141,13 @@ start_scanner "$TMP_DIR/empty.map"
 scan_message "$TMP_DIR/openphish.eml" >"$TMP_DIR/empty.out"
 assert_symbol_absent "$TMP_DIR/empty.out"
 
+# Test 5: hot-reload — refresh the map while the scanner is running and verify
+# detection works without restarting the container.
+# Replace the empty map with the pre-populated one via atomic move (same as refresh script).
+cp "$TMP_DIR/url_blocklist.map" "$TMP_DIR/empty.map"
+# Give Rspamd's map watcher 2 seconds to detect the file change.
+sleep 2
+scan_message "$TMP_DIR/openphish.eml" >"$TMP_DIR/hotreload.out"
+assert_symbol_present "$TMP_DIR/hotreload.out"
+
 printf 'url_blocklist_test: PASS\n'
