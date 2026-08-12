@@ -1,7 +1,7 @@
-From: Finance Automation <automation@phishing-test.com>
+From: Finance Automation <automation@phishing.test>
 To: security-review@victim.example
 Date: Mon, 10 Aug 2026 13:46:00 +0000
-Message-ID: <msg-1844-attachment_qr-04@corpus.phishing-test.com>
+Message-ID: <msg-1844-attachment_qr-04@corpus.phishing.test>
 Subject: Updated invoice template
 MIME-Version: 1.0
 Content-Type: multipart/mixed; boundary="===============9209714903422972982=="
@@ -10,8 +10,7 @@ Content-Type: multipart/mixed; boundary="===============9209714903422972982=="
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
 
-Enable content in the attached macro-enabled document to refresh the invoice =
-totals. If updates are blocked, open https://evil.com/microsoft/update.
+Enable content in the attached macro-enabled document to refresh the invoice totals.
 
 --===============9209714903422972982==
 Content-Type: application/vnd.ms-word.document.macroEnabled.12

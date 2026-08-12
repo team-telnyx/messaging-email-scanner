@@ -1,9 +1,9 @@
 From: Morgan Chen <morgan@victim.example>
 To: security-review@victim.example
 Date: Mon, 10 Aug 2026 13:30:00 +0000
-Message-ID: <msg-1844-bec-06@corpus.phishing-test.com>
+Message-ID: <msg-1844-bec-06@corpus.phishing.test>
 Subject: Re: Re: Re: March payment schedule
-Reply-To: payments@evil.com
+Reply-To: payments@evil.example
 In-Reply-To: <invoice-thread-441@victim.example>
 References:
  <invoice-thread-438@victim.example> <invoice-thread-441@victim.example>

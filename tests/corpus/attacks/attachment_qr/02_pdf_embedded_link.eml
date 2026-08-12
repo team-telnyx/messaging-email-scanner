@@ -1,7 +1,7 @@
-From: Vendor Billing <billing@phishing-test.com>
+From: Vendor Billing <billing@phishing.test>
 To: security-review@victim.example
 Date: Mon, 10 Aug 2026 13:44:00 +0000
-Message-ID: <msg-1844-attachment_qr-02@corpus.phishing-test.com>
+Message-ID: <msg-1844-attachment_qr-02@corpus.phishing.test>
 Subject: Invoice 84721
 MIME-Version: 1.0
 Content-Type: multipart/mixed; boundary="===============3092681432942991327=="
@@ -10,8 +10,7 @@ Content-Type: multipart/mixed; boundary="===============3092681432942991327=="
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
 
-Please review invoice 84721 using the secure link inside the attached PDF. If=
- the PDF viewer blocks links, use https://evil.com/paypal/invoice.
+Please review invoice 84721 using the secure link inside the attached PDF. If the PDF viewer blocks links, please contact us.
 
 --===============3092681432942991327==
 Content-Type: application/pdf

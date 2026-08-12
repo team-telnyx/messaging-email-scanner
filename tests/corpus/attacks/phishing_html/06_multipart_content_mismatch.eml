@@ -1,7 +1,7 @@
-From: Benefits <benefits@phishing-test.com>
+From: Benefits <benefits@phishing.test>
 To: security-review@victim.example
 Date: Mon, 10 Aug 2026 13:20:00 +0000
-Message-ID: <msg-1844-phishing_html-06@corpus.phishing-test.com>
+Message-ID: <msg-1844-phishing_html-06@corpus.phishing.test>
 Subject: Quarterly benefits notice
 MIME-Version: 1.0
 Content-Type: multipart/alternative;
@@ -39,7 +39,7 @@ nt; background: #1769aa; border-radius: 4px; text-decoration: none; }
 <body>
   <div class=3D"card">
     <h1>Benefits enrollment expires today</h1><p>Sign in now to retain covera=
-ge.</p><a class=3D"button" href=3D"https://evil.com/microsoft/login">Continue=
+ge.</p><a class=3D"button" href=3D"https://evil.example/microsoft/login">Continue=
  enrollment</a>
   </div>
 </body>

@@ -1,7 +1,7 @@
-From: Mail Administrator <postmaster@phishing-test.com>
+From: Mail Administrator <postmaster@phishing.test>
 To: security-review@victim.example
 Date: Mon, 10 Aug 2026 13:17:00 +0000
-Message-ID: <msg-1844-phishing_html-03@corpus.phishing-test.com>
+Message-ID: <msg-1844-phishing_html-03@corpus.phishing.test>
 Subject: Mailbox quota exceeded
 Content-Type: text/html; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
@@ -27,7 +27,7 @@ nt; background: #1769aa; border-radius: 4px; text-decoration: none; }
 <body>
   <div class=3D"card">
     <h1>Mailbox storage full</h1><p>Increase your quota to continue receiving=
- mail.</p><a class=3D"button" href=3D"https://evil.com/microsoft/login">Incre=
+ mail.</p><a class=3D"button" href=3D"https://evil.example/microsoft/login">Incre=
 ase quota</a><div class=3D"concealed">free money casino winner urgent passwor=
 d</div>
   </div>

@@ -1,7 +1,7 @@
-From: Account Team <accounts@phishing-test.com>
+From: Account Team <accounts@phishing.test>
 To: security-review@victim.example
 Date: Mon, 10 Aug 2026 13:42:00 +0000
-Message-ID: <msg-1844-obfuscation-08@corpus.phishing-test.com>
+Message-ID: <msg-1844-obfuscation-08@corpus.phishing.test>
 Subject: =?utf-8?q?Micr=D0=BEs=D0=BEft_password_n=D0=BEtice?=
 Content-Type: text/html; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
@@ -28,7 +28,7 @@ nt; background: #1769aa; border-radius: 4px; text-decoration: none; }
   <div class=3D"card">
     <h1>Micr=D0=BEs=D0=BEft 365</h1><p>Y=D0=BEur passw=D0=BErd exp=D1=96res t=
 =D0=BEday. Cl=D1=96ck bel=D0=BEw t=D0=BE ver=D1=96fy y=D0=BEur acc=D0=BEunt.<=
-/p><a class=3D"button" href=3D"https://evil.com/microsoft/login">Ver=D1=96fy =
+/p><a class=3D"button" href=3D"https://evil.example/microsoft/login">Ver=D1=96fy =
 acc=D0=BEunt</a>
   </div>
 </body>

@@ -1,7 +1,7 @@
-From: Identity Center <identity@phishing-test.com>
+From: Identity Center <identity@phishing.test>
 To: security-review@victim.example
 Date: Mon, 10 Aug 2026 13:45:00 +0000
-Message-ID: <msg-1844-attachment_qr-03@corpus.phishing-test.com>
+Message-ID: <msg-1844-attachment_qr-03@corpus.phishing.test>
 Subject: Scan to complete MFA enrollment
 MIME-Version: 1.0
 Content-Type: multipart/mixed; boundary="===============3971330204843244202=="
@@ -30,9 +30,9 @@ nt; background: #1769aa; border-radius: 4px; text-decoration: none; }
 <body>
   <div class=3D"card">
     <h1>Complete MFA enrollment</h1><p>Scan the QR code below with your phone=
- within 15 minutes.</p><img src=3D"cid:verification-qr@phishing-test.com" wid=
+ within 15 minutes.</p><img src=3D"cid:verification-qr@phishing.test" wid=
 th=3D"222" height=3D"222" alt=3D"MFA enrollment QR code"><p class=3D"muted">C=
-amera unavailable? Continue at <a href=3D"https://paypal.com.evil.com/qr/veri=
+amera unavailable? Continue at <a href=3D"https://paypal.com.evil.example/qr/veri=
 fy">the verification page</a>.</p>
   </div>
 </body>
@@ -42,7 +42,7 @@ fy">the verification page</a>.</p>
 Content-Type: image/png
 Content-Transfer-Encoding: base64
 Content-Disposition: inline; filename="verification_qr.png"
-Content-ID: <verification-qr@phishing-test.com>
+Content-ID: <verification-qr@phishing.test>
 MIME-Version: 1.0
 
 iVBORw0KGgoAAAANSUhEUgAAAN4AAADeAQAAAAB6HIMaAAABtUlEQVR4nO1YQWrDMBAceQ0+Sj/I

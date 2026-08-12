@@ -1,9 +1,9 @@
-From: Account Digest <digest@phishing-test.com>
+From: Account Digest <digest@phishing.test>
 To: security-review@victim.example
 Date: Mon, 10 Aug 2026 13:49:00 +0000
-Message-ID: <msg-1844-social_engineering-03@corpus.phishing-test.com>
+Message-ID: <msg-1844-social_engineering-03@corpus.phishing.test>
 Subject: Your weekly account digest
-List-Unsubscribe: <https://paypal.com.evil.com/unsubscribe?id=8841>
+List-Unsubscribe: <https://paypal.com.evil.example/unsubscribe?id=8841>
 List-Unsubscribe-Post: List-Unsubscribe=One-Click
 Content-Type: text/html; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
@@ -29,7 +29,7 @@ nt; background: #1769aa; border-radius: 4px; text-decoration: none; }
 <body>
   <div class=3D"card">
     <h1>Your weekly digest</h1><p>No new notifications.</p><p class=3D"muted"=
-><a href=3D"https://evil.com/paypal/unsubscribe">Unsubscribe</a> from account=
+><a href=3D"https://evil.example/paypal/unsubscribe">Unsubscribe</a> from account=
  mail.</p>
   </div>
 </body>

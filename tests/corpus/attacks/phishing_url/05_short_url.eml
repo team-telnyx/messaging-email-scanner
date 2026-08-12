@@ -1,7 +1,7 @@
-From: Billing Share <share@phishing-test.com>
+From: Billing Share <share@phishing.test>
 To: security-review@victim.example
 Date: Mon, 10 Aug 2026 13:04:00 +0000
-Message-ID: <msg-1844-phishing_url-05@corpus.phishing-test.com>
+Message-ID: <msg-1844-phishing_url-05@corpus.phishing.test>
 Subject: Shared billing statement
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
@@ -9,7 +9,7 @@ MIME-Version: 1.0
 
 The statement is available through our mobile link:
 
-https://bit.ly/paypal-login
+https://bit.example/paypal-login
 
-This test short link represents a redirect to https://paypal.com.evil.com/sho=
+This test short link represents a redirect to https://paypal.com.evil.example/sho=
 rt/verify.

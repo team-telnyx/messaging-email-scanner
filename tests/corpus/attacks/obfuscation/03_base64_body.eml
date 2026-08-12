@@ -1,7 +1,7 @@
-From: Account Security <verify@phishing-test.com>
+From: Account Security <verify@phishing.test>
 To: security-review@victim.example
 Date: Mon, 10 Aug 2026 13:37:00 +0000
-Message-ID: <msg-1844-obfuscation-03@corpus.phishing-test.com>
+Message-ID: <msg-1844-obfuscation-03@corpus.phishing.test>
 Subject: Security verification
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: base64

@@ -1,7 +1,7 @@
-From: Document Delivery <delivery@phishing-test.com>
+From: Document Delivery <delivery@phishing.test>
 To: security-review@victim.example
 Date: Mon, 10 Aug 2026 13:43:00 +0000
-Message-ID: <msg-1844-attachment_qr-01@corpus.phishing-test.com>
+Message-ID: <msg-1844-attachment_qr-01@corpus.phishing.test>
 Subject: Secure document attached
 MIME-Version: 1.0
 Content-Type: multipart/mixed; boundary="===============7956567071360476417=="

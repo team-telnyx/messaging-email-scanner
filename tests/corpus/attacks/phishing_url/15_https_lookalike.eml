@@ -1,7 +1,7 @@
-From: Payments Security <security@phishing-test.com>
+From: Payments Security <security@phishing.test>
 To: security-review@victim.example
 Date: Mon, 10 Aug 2026 13:14:00 +0000
-Message-ID: <msg-1844-phishing_url-15@corpus.phishing-test.com>
+Message-ID: <msg-1844-phishing_url-15@corpus.phishing.test>
 Subject: TLS-secured payment review
 Content-Type: text/html; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
@@ -28,7 +28,7 @@ nt; background: #1769aa; border-radius: 4px; text-decoration: none; }
   <div class=3D"card">
     <h1>Secure payment review</h1><p>This TLS-encrypted portal uses an automa=
 ted certificate and displays a padlock.</p><a class=3D"button" href=3D"https:=
-//secure-payments.evil.com/paypal/login">Review payment securely</a>
+//secure-payments.evil.example/paypal/login">Review payment securely</a>
   </div>
 </body>
 </html>

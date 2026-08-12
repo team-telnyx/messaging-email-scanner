@@ -1,3 +1,3 @@
-action: add_header
-symbols: PHISH_URL_HEURISTIC
-description: QR image encodes a phishing URL for mobile scanning
+action: no_action
+symbols: 
+description: QR code pointing to phishing URL — QR decoding not yet supported

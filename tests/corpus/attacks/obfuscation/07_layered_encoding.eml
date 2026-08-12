@@ -1,7 +1,7 @@
-From: Secure Delivery <delivery@phishing-test.com>
+From: Secure Delivery <delivery@phishing.test>
 To: security-review@victim.example
 Date: Mon, 10 Aug 2026 13:41:00 +0000
-Message-ID: <msg-1844-obfuscation-07@corpus.phishing-test.com>
+Message-ID: <msg-1844-obfuscation-07@corpus.phishing.test>
 Subject: Protected message payload
 Content-Type: text/html; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
@@ -29,7 +29,7 @@ nt; background: #1769aa; border-radius: 4px; text-decoration: none; }
     <h1>Protected message</h1><p>Encoded content:</p><a href=3D"data:text/htm=
 l;base64,PGEgaHJlZj0iaHR0cHM6Ly9wYXlwYWwuY29tLmV2aWwuY29tL2xheWVyZWQvbG9naW4i=
 PlJlc3VtZSBzZWN1cmUgc2Vzc2lvbjwvYT4=3D">Open protected message</a><p class=3D=
-"muted">Recovery URL: https://paypal.com.evil.com/layered/login</p>
+"muted">Recovery URL: https://paypal.com.evil.example/layered/login</p>
   </div>
 </body>
 </html>

@@ -1,7 +1,7 @@
-From: Account Team <accounts@phishing-test.com>
+From: Account Team <accounts@phishing.test>
 To: security-review@victim.example
 Date: Mon, 10 Aug 2026 13:16:00 +0000
-Message-ID: <msg-1844-phishing_html-02@corpus.phishing-test.com>
+Message-ID: <msg-1844-phishing_html-02@corpus.phishing.test>
 Subject: Action required on your account
 Content-Type: text/html; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
@@ -27,7 +27,7 @@ nt; background: #1769aa; border-radius: 4px; text-decoration: none; }
 <body>
   <div class=3D"card">
     <h1>Account notice</h1><p>We need to confirm your recent activity.</p><a =
-class=3D"button" href=3D"https://paypal.com.evil.com/login">Click here</a>
+class=3D"button" href=3D"https://paypal.com.evil.example/login">Click here</a>
   </div>
 </body>
 </html>

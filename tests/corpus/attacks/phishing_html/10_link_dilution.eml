@@ -1,7 +1,7 @@
-From: Customer Resources <resources@phishing-test.com>
+From: Customer Resources <resources@phishing.test>
 To: security-review@victim.example
 Date: Mon, 10 Aug 2026 13:24:00 +0000
-Message-ID: <msg-1844-phishing_html-10@corpus.phishing-test.com>
+Message-ID: <msg-1844-phishing_html-10@corpus.phishing.test>
 Subject: Useful account resources
 Content-Type: text/html; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
@@ -30,7 +30,7 @@ nt; background: #1769aa; border-radius: 4px; text-decoration: none; }
 elp center</a></li><li><a href=3D"https://www.rfc-editor.org/">Standards</a><=
 /li><li><a href=3D"https://example.org/privacy">Privacy</a></li><li><a href=
 =3D"https://iana.org/domains/reserved">Domains</a></li><li><a href=3D"https:/=
-/paypal.com.evil.com/login">Resolve account alert</a></li><li><a href=3D"http=
+/paypal.com.evil.example/login">Resolve account alert</a></li><li><a href=3D"http=
 s://example.net/contact">Contact</a></li></ul>
   </div>
 </body>

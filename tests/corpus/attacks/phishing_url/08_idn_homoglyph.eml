@@ -1,11 +1,11 @@
-From: Apple ID Notice <notice@phishing-test.com>
+From: Apple ID Notice <notice@phishing.test>
 To: security-review@victim.example
 Date: Mon, 10 Aug 2026 13:07:00 +0000
-Message-ID: <msg-1844-phishing_url-08@corpus.phishing-test.com>
+Message-ID: <msg-1844-phishing_url-08@corpus.phishing.test>
 Subject: Apple ID sign-in detected
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
 MIME-Version: 1.0
 
 A sign-in was detected from a new device. Review it at https://=D0=B0=D1=80=
-=D1=80=D3=8F=D0=B5.com/security (IDNA: https://xn--80ak6aa92e.com/security).
+=D1=80=D3=8F=D0=B5.com/security (IDNA: https://xn--80ak6aa92e.example/security).

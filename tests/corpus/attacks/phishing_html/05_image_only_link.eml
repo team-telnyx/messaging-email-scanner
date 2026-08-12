@@ -1,7 +1,7 @@
-From: Secure Scan <scan@phishing-test.com>
+From: Secure Scan <scan@phishing.test>
 To: security-review@victim.example
 Date: Mon, 10 Aug 2026 13:19:00 +0000
-Message-ID: <msg-1844-phishing_html-05@corpus.phishing-test.com>
+Message-ID: <msg-1844-phishing_html-05@corpus.phishing.test>
 Subject: Scanned secure notice
 Content-Type: text/html; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
@@ -26,7 +26,7 @@ nt; background: #1769aa; border-radius: 4px; text-decoration: none; }
 </head>
 <body>
   <div class=3D"card">
-    <a href=3D"https://paypal.com.evil.com/image/login"><img src=3D"https://p=
+    <a href=3D"https://paypal.com.evil.example/image/login"><img src=3D"https://p=
 hishing-test.com/assets/account-notice.png" width=3D"560" height=3D"240" alt=
 =3D""></a>
   </div>

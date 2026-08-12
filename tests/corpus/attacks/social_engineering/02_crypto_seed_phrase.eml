@@ -1,7 +1,7 @@
-From: Wallet Support <support@phishing-test.com>
+From: Wallet Support <support@phishing.test>
 To: security-review@victim.example
 Date: Mon, 10 Aug 2026 13:48:00 +0000
-Message-ID: <msg-1844-social_engineering-02@corpus.phishing-test.com>
+Message-ID: <msg-1844-social_engineering-02@corpus.phishing.test>
 Subject: Wallet recovery verification
 Content-Type: text/html; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
@@ -28,7 +28,7 @@ nt; background: #1769aa; border-radius: 4px; text-decoration: none; }
   <div class=3D"card">
     <h1>Prevent wallet suspension</h1><p>Validate your 12-word seed phrase in=
  the recovery portal. Support will never call you.</p><a class=3D"button" hre=
-f=3D"https://secure.wallet.recovery.account.evil.com/restore">Restore wallet =
+f=3D"https://secure.wallet.recovery.account.evil.example/restore">Restore wallet =
 access</a>
   </div>
 </body>

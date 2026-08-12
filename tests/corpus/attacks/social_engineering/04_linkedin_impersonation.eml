@@ -1,7 +1,7 @@
-From: LinkedIn Invitations <invitations@phishing-test.com>
+From: LinkedIn Invitations <invitations@phishing.test>
 To: security-review@victim.example
 Date: Mon, 10 Aug 2026 13:50:00 +0000
-Message-ID: <msg-1844-social_engineering-04@corpus.phishing-test.com>
+Message-ID: <msg-1844-social_engineering-04@corpus.phishing.test>
 Subject: Dana sent you a LinkedIn connection request
 Content-Type: text/html; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
@@ -27,7 +27,7 @@ nt; background: #1769aa; border-radius: 4px; text-decoration: none; }
 <body>
   <div class=3D"card">
     <h1>Dana Mitchell wants to connect</h1><p>Chief Executive Officer at Exam=
-ple Holdings</p><a class=3D"button" href=3D"https://evil.com/linkedin/connect=
+ple Holdings</p><a class=3D"button" href=3D"https://evil.example/linkedin/connect=
 ">View connection request</a>
   </div>
 </body>

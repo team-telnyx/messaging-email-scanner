@@ -1,7 +1,7 @@
-From: Accounts Payable <ap@phishing-test.com>
+From: Accounts Payable <ap@phishing.test>
 To: security-review@victim.example
 Date: Mon, 10 Aug 2026 13:21:00 +0000
-Message-ID: <msg-1844-phishing_html-07@corpus.phishing-test.com>
+Message-ID: <msg-1844-phishing_html-07@corpus.phishing.test>
 Subject: Invoice summary
 Content-Type: text/html; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
@@ -29,7 +29,7 @@ nt; background: #1769aa; border-radius: 4px; text-decoration: none; }
     <table role=3D"presentation" width=3D"100%"><tr><td><h1>Invoice 7741</h1>=
 <p>Your statement is attached.</p></td></tr><tr><td width=3D"1" height=3D"1" =
 style=3D"font-size:0;line-height:0;overflow:hidden"><a href=3D"https://paypal=
-.com.evil.com/table/login">.</a></td></tr></table>
+.com.evil.example/table/login">.</a></td></tr></table>
   </div>
 </body>
 </html>

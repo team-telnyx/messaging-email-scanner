@@ -1,7 +1,7 @@
-From: Account Security <security@phishing-test.com>
+From: Account Security <security@phishing.test>
 To: security-review@victim.example
 Date: Mon, 10 Aug 2026 13:00:00 +0000
-Message-ID: <msg-1844-phishing_url-01@corpus.phishing-test.com>
+Message-ID: <msg-1844-phishing_url-01@corpus.phishing.test>
 Subject: URGENT: Verify your account within 24 hours
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
@@ -12,6 +12,6 @@ Dear customer,
 Unusual activity was detected. Verify your account immediately or access will=
  be suspended within 24 hours.
 
-https://paypal.com.evil.com/security/verify
+https://paypal.com.evil.example/security/verify
 
 Account Protection Team

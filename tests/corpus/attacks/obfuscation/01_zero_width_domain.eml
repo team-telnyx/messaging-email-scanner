@@ -1,7 +1,7 @@
-From: Security Notice <security@phishing-test.com>
+From: Security Notice <security@phishing.test>
 To: security-review@victim.example
 Date: Mon, 10 Aug 2026 13:35:00 +0000
-Message-ID: <msg-1844-obfuscation-01@corpus.phishing-test.com>
+Message-ID: <msg-1844-obfuscation-01@corpus.phishing.test>
 Subject: Account sign-in review
 Content-Type: text/html; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
@@ -27,7 +27,7 @@ nt; background: #1769aa; border-radius: 4px; text-decoration: none; }
 <body>
   <div class=3D"card">
     <h1>Review sign-in</h1><p>The displayed destination is pay=E2=80=8Bpal.co=
-m.</p><a class=3D"button" href=3D"https://paypal.com.evil.com/zero-width/logi=
+m.</p><a class=3D"button" href=3D"https://paypal.com.evil.example/zero-width/logi=
 n">Continue to pay=E2=80=8Bpal.com</a>
   </div>
 </body>

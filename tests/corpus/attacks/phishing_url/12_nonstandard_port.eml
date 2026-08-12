@@ -1,7 +1,7 @@
-From: Portal Operations <portal@phishing-test.com>
+From: Portal Operations <portal@phishing.test>
 To: security-review@victim.example
 Date: Mon, 10 Aug 2026 13:11:00 +0000
-Message-ID: <msg-1844-phishing_url-12@corpus.phishing-test.com>
+Message-ID: <msg-1844-phishing_url-12@corpus.phishing.test>
 Subject: Secure portal migration
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
@@ -9,4 +9,4 @@ MIME-Version: 1.0
 
 Use the migrated portal to confirm your profile:
 
-https://evil.com:8443/paypal/login
+https://evil.example:8443/paypal/login

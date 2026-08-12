@@ -1,7 +1,7 @@
-From: Document Service <documents@phishing-test.com>
+From: Document Service <documents@phishing.test>
 To: security-review@victim.example
 Date: Mon, 10 Aug 2026 13:18:00 +0000
-Message-ID: <msg-1844-phishing_html-04@corpus.phishing-test.com>
+Message-ID: <msg-1844-phishing_html-04@corpus.phishing.test>
 Subject: Secure document delivery
 Content-Type: text/html; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
@@ -27,7 +27,7 @@ nt; background: #1769aa; border-radius: 4px; text-decoration: none; }
 <body>
   <div class=3D"card">
     <h1>Document ready</h1><p>Authenticate to download the document.</p><a cl=
-ass=3D"button" href=3D"https://evil.com/dropbox/login">View document</a><p cl=
+ass=3D"button" href=3D"https://evil.example/dropbox/login">View document</a><p cl=
 ass=3D"white">password expired verify immediately gift card payment</p>
   </div>
 </body>

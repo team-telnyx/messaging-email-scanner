@@ -1,7 +1,7 @@
-From: Account Notice <notice@phishing-test.com>
+From: Account Notice <notice@phishing.test>
 To: security-review@victim.example
 Date: Mon, 10 Aug 2026 13:38:00 +0000
-Message-ID: <msg-1844-obfuscation-04@corpus.phishing-test.com>
+Message-ID: <msg-1844-obfuscation-04@corpus.phishing.test>
 Subject: Encoded account notice
 Content-Type: text/html; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
@@ -26,7 +26,7 @@ nt; background: #1769aa; border-radius: 4px; text-decoration: none; }
 </head>
 <body>
   <div class=3D"card">
-    <h1>Account notice</h1><a href=3D"https://evil.com/%2Fpaypal%2Flogin%40se=
+    <h1>Account notice</h1><a href=3D"https://evil.example/%2Fpaypal%2Flogin%40se=
 cure">Review encoded notice</a>
   </div>
 </body>

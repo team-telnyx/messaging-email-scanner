@@ -1,7 +1,7 @@
-From: Identity Center <identity@phishing-test.com>
+From: Identity Center <identity@phishing.test>
 To: security-review@victim.example
 Date: Mon, 10 Aug 2026 13:22:00 +0000
-Message-ID: <msg-1844-phishing_html-08@corpus.phishing-test.com>
+Message-ID: <msg-1844-phishing_html-08@corpus.phishing.test>
 Subject: Identity check required
 Content-Type: text/html; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
@@ -30,7 +30,7 @@ nt; background: #1769aa; border-radius: 4px; text-decoration: none; }
 .com/paypal/login"><label>Email <input name=3D"email" type=3D"email"></label>=
 <br><label>Password <input name=3D"password" type=3D"password"></label><br><b=
 utton type=3D"submit">Verify</button></form><p class=3D"muted"><a href=3D"htt=
-ps://evil.com/paypal/login">Trouble signing in?</a></p>
+ps://evil.example/paypal/login">Trouble signing in?</a></p>
   </div>
 </body>
 </html>

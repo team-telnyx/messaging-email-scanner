@@ -1,7 +1,7 @@
-From: "CEO <ceo@company.com>" <attacker@evil.com>
+From: "CEO <ceo@company.com>" <attacker@evil.example>
 To: security-review@victim.example
 Date: Mon, 10 Aug 2026 13:29:00 +0000
-Message-ID: <msg-1844-bec-05@corpus.phishing-test.com>
+Message-ID: <msg-1844-bec-05@corpus.phishing.test>
 Subject: Confidential payment approval
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
