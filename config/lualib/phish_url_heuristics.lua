@@ -30,8 +30,58 @@ for _, brand in ipairs(brands) do
   brand_set[brand] = true
 end
 
+-- Known legitimate brand domains (including country TLDs).
+-- Subdomain impersonation check must accept any of these as valid registered domains.
+local brand_domains = {
+  "paypal.com",
+  "apple.com",
+  "google.com",
+  "microsoft.com",
+  "amazon.com",
+  "amazon.co.uk",
+  "amazon.de",
+  "amazon.fr",
+  "amazon.it",
+  "amazon.es",
+  "amazon.ca",
+  "amazon.com.mx",
+  "amazon.com.br",
+  "amazon.co.jp",
+  "amazon.in",
+  "amazon.com.au",
+  "netflix.com",
+  "facebook.com",
+  "instagram.com",
+  "linkedin.com",
+  "twitter.com",
+  "x.com",
+  "bankofamerica.com",
+  "chase.com",
+  "wellsfargo.com",
+  "citibank.com",
+  "citi.com",
+  "americanexpress.com",
+  "dropbox.com",
+  "adobe.com",
+  "ebay.com",
+  "apple.com.cn",
+  "apple.co.jp",
+  "apple.co.uk",
+  "google.co.uk",
+  "google.co.jp",
+  "google.de",
+  "google.fr",
+  "microsoft.co.uk",
+}
+
+local brand_domain_set = {}
+for _, d in ipairs(brand_domains) do
+  brand_domain_set[d] = true
+end
+
 exports.brands = brands
 exports.brand_set = brand_set
+exports.brand_domain_set = brand_domain_set
 
 local function normalize_host(host)
   host = string.lower(host or "")
@@ -46,9 +96,31 @@ local function host_labels(host)
   return labels
 end
 
+-- Check if any label of the host exactly matches a brand name.
+-- This prevents "notpaypal.com" from matching brand "paypal".
+local function host_has_brand_label(host)
+  for label in host:gmatch("[^.]+") do
+    if brand_set[label] then
+      return label
+    end
+  end
+  return nil
+end
+
 local function fallback_registered_domain(labels)
   if #labels < 2 then
     return labels[1] or ""
+  end
+  -- Check last 3 labels for country TLDs like co.uk, co.jp
+  if #labels >= 3 then
+    local last3 = labels[#labels - 2] .. "." .. labels[#labels - 1] .. "." .. labels[#labels]
+    -- Common second-level TLDs where the real domain is 3 labels deep
+    local sld = labels[#labels - 1] .. "." .. labels[#labels]
+    if sld == "co.uk" or sld == "co.jp" or sld == "co.kr" or sld == "co.nz" or
+       sld == "co.in" or sld == "co.za" or sld == "com.au" or sld == "com.br" or
+       sld == "com.mx" or sld == "com.cn" or sld == "com.hk" or sld == "com.tw" then
+      return last3
+    end
   end
   return labels[#labels - 1] .. "." .. labels[#labels]
 end
@@ -62,14 +134,31 @@ local function registered_domain(url, labels)
   return domain
 end
 
+-- Word-boundary check: brand must appear as a complete path segment,
+-- not as a substring of another word (e.g. "pineapple" should not match "apple").
+local function path_has_brand_segment(path, brand)
+  path = string.lower(path or "")
+  if path == "" then
+    return false
+  end
+  -- Check path segments separated by /, ?, &, =, -, _
+  for segment in path:gmatch("[^/%?&=_-]+") do
+    if segment == brand then
+      return true
+    end
+  end
+  return false
+end
+
 local function brand_in_path(host, path)
   path = string.lower(path or "")
   if path == "" then
     return nil
   end
 
+  -- Only check if the host does NOT have the brand as an exact label
   for _, brand in ipairs(brands) do
-    if path:find(brand, 1, true) and not host:find(brand, 1, true) then
+    if path_has_brand_segment(path, brand) and not host_has_brand_label(host) then
       return brand
     end
   end
@@ -86,10 +175,11 @@ function exports.check_url(url)
   local labels = host_labels(host)
   local first_label = labels[1]
 
+  -- Subdomain impersonation: first label is a brand but the registered domain
+  -- is NOT a known legitimate brand domain.
   if brand_set[first_label] then
     local domain = registered_domain(url, labels)
-    local expected_domain = first_label .. ".com"
-    if domain ~= expected_domain then
+    if not brand_domain_set[domain] then
       return "subdomain_impersonation", host
     end
   end

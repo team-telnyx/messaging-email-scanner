@@ -1,7 +1,4 @@
-local module_dir = assert(
-  os.getenv("PHISH_URL_HEURISTICS_LUA_PATH"),
-  "PHISH_URL_HEURISTICS_LUA_PATH is required"
-)
+local module_dir = os.getenv("PHISH_URL_HEURISTICS_LUA_PATH") or "config/lualib"
 package.path = module_dir .. "/?.lua;" .. package.path
 
 local registered_symbol
