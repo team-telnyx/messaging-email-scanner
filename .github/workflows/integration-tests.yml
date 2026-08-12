@@ -15,3 +15,17 @@ jobs:
         run: |
           docker build -t messaging-email-scanner:html-link-test .
           HTML_LINK_SKIP_BUILD=1 bash tests/html_link_extraction_test.sh
+
+  homoglyph-detection:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Lua
+        run: sudo apt-get update && sudo apt-get install -y lua5.4
+      - name: Run homoglyph detection Lua tests
+        run: |
+          HOMOGLYPH_DETECTION_LUA_PATH=config/lualib lua5.4 tests/homoglyph_detection_test.lua
+      - name: Run homoglyph detection integration test
+        run: |
+          docker build -t messaging-email-scanner:homoglyph-test .
+          HOMOGLYPH_SKIP_BUILD=1 bash tests/homoglyph_detection_test.sh
