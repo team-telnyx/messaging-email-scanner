@@ -1,0 +1,11 @@
+From: Storage Alerts <storage@phishing.test>
+To: security-review@victim.example
+Date: Mon, 10 Aug 2026 13:10:00 +0000
+Message-ID: <msg-1844-phishing_url-11@corpus.phishing.test>
+Subject: Google storage alert
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+Your cloud storage needs attention. Continue at https://google.com@evil.example/p=
+aypal/login to prevent file removal.

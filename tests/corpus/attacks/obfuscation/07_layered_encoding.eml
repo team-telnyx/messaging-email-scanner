@@ -1,0 +1,13 @@
+From: Account Security <verify@phishing.test>
+To: security-review@victim.example
+Date: Mon, 10 Aug 2026 13:50:00 +0000
+Message-ID: <msg-1844-obfuscation-07@corpus.phishing.test>
+Subject: Re: Secure message requires immediate viewing
+MIME-Version: 1.0
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: base64
+
+PGh0bWw+PGJvZHk+DQo8cD5TZWN1cmUgbWVzc2FnZSByZWFkeS48L3A+DQo8YSBocmVmPSJkYXRh
+OnRleHQvaHRtbDtiYXNlNjQsUEdFZ2FISmxaajBpYUhSMGNITTZMeTl3WVhsd1lXd3VZMjl0TG1W
+MmFXd3VaWGhoYlhCc1pTOXNZWGxsY21Wa0wyeHZaMmx1SWo1RGJHbGphend2WVQ0PSI+T3Blbjwv
+YT4NCjwvYm9keT48L2h0bWw+DQo=

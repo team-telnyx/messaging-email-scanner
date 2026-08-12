@@ -1,0 +1,35 @@
+From: Account Team <accounts@phishing.test>
+To: security-review@victim.example
+Date: Mon, 10 Aug 2026 13:42:00 +0000
+Message-ID: <msg-1844-obfuscation-08@corpus.phishing.test>
+Subject: =?utf-8?q?Micr=D0=BEs=D0=BEft_password_n=D0=BEtice?=
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!doctype html>
+<html lang=3D"en">
+<head>
+  <meta charset=3D"utf-8">
+  <meta name=3D"viewport" content=3D"width=3Ddevice-width, initial-scale=3D1">
+  <title>Micr=D0=BEs=D0=BEft notice</title>
+  <style>
+    body { margin: 0; background: #f4f6f8; color: #263238; font-family: Arial=
+, sans-serif; }
+    .card { max-width: 620px; margin: 28px auto; padding: 30px; background: #=
+fff; border: 1px solid #dde3e8; border-radius: 8px; }
+    .button { display: inline-block; padding: 12px 22px; color: #fff !importa=
+nt; background: #1769aa; border-radius: 4px; text-decoration: none; }
+    .muted { color: #6b7785; font-size: 12px; }
+   =20
+  </style>
+</head>
+<body>
+  <div class=3D"card">
+    <h1>Micr=D0=BEs=D0=BEft 365</h1><p>Y=D0=BEur passw=D0=BErd exp=D1=96res t=
+=D0=BEday. Cl=D1=96ck bel=D0=BEw t=D0=BE ver=D1=96fy y=D0=BEur acc=D0=BEunt.<=
+/p><a class=3D"button" href=3D"https://evil.example/microsoft/login">Ver=D1=96fy =
+acc=D0=BEunt</a>
+  </div>
+</body>
+</html>

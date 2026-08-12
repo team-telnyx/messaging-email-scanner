@@ -1,0 +1,3 @@
+action: add_header
+symbols: OCR_SKIPPED
+description: Base64-encoded HTML wraps a nested base64 data URI with phishing payload

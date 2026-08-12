@@ -1,0 +1,37 @@
+From: Customer Resources <resources@phishing.test>
+To: security-review@victim.example
+Date: Mon, 10 Aug 2026 13:24:00 +0000
+Message-ID: <msg-1844-phishing_html-10@corpus.phishing.test>
+Subject: Useful account resources
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!doctype html>
+<html lang=3D"en">
+<head>
+  <meta charset=3D"utf-8">
+  <meta name=3D"viewport" content=3D"width=3Ddevice-width, initial-scale=3D1">
+  <title>Account resources</title>
+  <style>
+    body { margin: 0; background: #f4f6f8; color: #263238; font-family: Arial=
+, sans-serif; }
+    .card { max-width: 620px; margin: 28px auto; padding: 30px; background: #=
+fff; border: 1px solid #dde3e8; border-radius: 8px; }
+    .button { display: inline-block; padding: 12px 22px; color: #fff !importa=
+nt; background: #1769aa; border-radius: 4px; text-decoration: none; }
+    .muted { color: #6b7785; font-size: 12px; }
+   =20
+  </style>
+</head>
+<body>
+  <div class=3D"card">
+    <h1>Customer resources</h1><ul><li><a href=3D"https://example.com/help">H=
+elp center</a></li><li><a href=3D"https://www.rfc-editor.org/">Standards</a><=
+/li><li><a href=3D"https://example.org/privacy">Privacy</a></li><li><a href=
+=3D"https://iana.org/domains/reserved">Domains</a></li><li><a href=3D"https:/=
+/paypal.com.evil.example/login">Resolve account alert</a></li><li><a href=3D"http=
+s://example.net/contact">Contact</a></li></ul>
+  </div>
+</body>
+</html>

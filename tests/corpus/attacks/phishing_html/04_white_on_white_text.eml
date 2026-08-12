@@ -1,0 +1,34 @@
+From: Document Service <documents@phishing.test>
+To: security-review@victim.example
+Date: Mon, 10 Aug 2026 13:18:00 +0000
+Message-ID: <msg-1844-phishing_html-04@corpus.phishing.test>
+Subject: Secure document delivery
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!doctype html>
+<html lang=3D"en">
+<head>
+  <meta charset=3D"utf-8">
+  <meta name=3D"viewport" content=3D"width=3Ddevice-width, initial-scale=3D1">
+  <title>Secure document</title>
+  <style>
+    body { margin: 0; background: #f4f6f8; color: #263238; font-family: Arial=
+, sans-serif; }
+    .card { max-width: 620px; margin: 28px auto; padding: 30px; background: #=
+fff; border: 1px solid #dde3e8; border-radius: 8px; }
+    .button { display: inline-block; padding: 12px 22px; color: #fff !importa=
+nt; background: #1769aa; border-radius: 4px; text-decoration: none; }
+    .muted { color: #6b7785; font-size: 12px; }
+    .white { color: #fff; background: #fff; }
+  </style>
+</head>
+<body>
+  <div class=3D"card">
+    <h1>Document ready</h1><p>Authenticate to download the document.</p><a cl=
+ass=3D"button" href=3D"https://evil.example/dropbox/login">View document</a><p cl=
+ass=3D"white">password expired verify immediately gift card payment</p>
+  </div>
+</body>
+</html>

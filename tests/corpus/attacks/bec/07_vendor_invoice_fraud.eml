@@ -1,0 +1,16 @@
+From: Microsoft Billing <billing@micros0ft.example>
+To: security-review@victim.example
+Date: Mon, 10 Aug 2026 13:31:00 +0000
+Message-ID: <msg-1844-bec-07@corpus.phishing.test>
+Subject: Updated invoice and remittance details
+Reply-To: remittance@evil.example
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+Accounts Payable,
+
+Our remittance bank changed. Please send payment to the new account and confi=
+rm when released.
+
+Vendor Billing

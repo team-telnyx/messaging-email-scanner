@@ -1,0 +1,10 @@
+From: Notification <notify@phishing.test>
+To: security-review@victim.example
+Date: Mon, 10 Aug 2026 13:06:00 +0000
+Message-ID: <msg-1844-phishing_url-07@corpus.phishing.test>
+Subject:
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+MIME-Version: 1.0
+
+https://paypal.com.evil.example/login

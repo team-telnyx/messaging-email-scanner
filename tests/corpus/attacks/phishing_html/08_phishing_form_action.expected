@@ -1,0 +1,3 @@
+action: add_header
+symbols: OCR_SKIPPED, PHISH_URL_HEURISTIC
+description: HTML form posts credentials to a phishing endpoint

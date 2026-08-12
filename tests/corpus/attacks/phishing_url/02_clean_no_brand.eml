@@ -1,0 +1,17 @@
+From: Document Center <notices@phishing.test>
+To: security-review@victim.example
+Date: Mon, 10 Aug 2026 13:01:00 +0000
+Message-ID: <msg-1844-phishing_url-02@corpus.phishing.test>
+Subject: Document available
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+MIME-Version: 1.0
+
+Hello,
+
+A document is available in the shared workspace. You may view it here:
+
+https://signin.portal.documents.account.evil.example/view/48219
+
+Regards,
+Document Center

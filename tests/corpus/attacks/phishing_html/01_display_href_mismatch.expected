@@ -1,0 +1,3 @@
+action: add_header
+symbols: OCR_SKIPPED, PHISH_URL_HEURISTIC
+description: Visible PayPal domain masks an attacker-controlled href

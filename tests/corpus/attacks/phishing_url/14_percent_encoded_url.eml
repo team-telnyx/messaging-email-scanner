@@ -1,0 +1,11 @@
+From: File Delivery <delivery@phishing.test>
+To: security-review@victim.example
+Date: Mon, 10 Aug 2026 13:13:00 +0000
+Message-ID: <msg-1844-phishing_url-14@corpus.phishing.test>
+Subject: Protected file notification
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+Open the protected file at https://evil.example/%2Fpaypal%2Flogin%40secure?contin=
+ue=3D%2Faccount.

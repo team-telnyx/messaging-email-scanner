@@ -1,0 +1,11 @@
+From: Invoice Desk <invoice@phishing.test>
+To: security-review@victim.example
+Date: Mon, 10 Aug 2026 13:36:00 +0000
+Message-ID: <msg-1844-obfuscation-02@corpus.phishing.test>
+Subject: Invoice =?utf-8?q?=E2=80=AEfdp=2Eexe?= review
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+The invoice viewer moved. Open https://evil.example/paypal/invoice to review the =
+document.

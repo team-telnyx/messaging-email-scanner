@@ -1,0 +1,12 @@
+From: PayPal Notifications <notice@phishing.test>
+To: security-review@victim.example
+Date: Mon, 10 Aug 2026 13:02:00 +0000
+Message-ID: <msg-1844-phishing_url-03@corpus.phishing.test>
+Subject: PayPal account notice
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+MIME-Version: 1.0
+
+We placed a temporary limitation on your profile. Review the notice at:
+
+https://paypal.com.evil.example/login?case=PP-20481

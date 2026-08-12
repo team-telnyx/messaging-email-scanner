@@ -1,0 +1,3 @@
+action: add_header
+symbols: OCR_SKIPPED, PHISH_URL_HEURISTIC
+description: Quoted-printable transfer encoding and percent escapes obscure a phishing URL

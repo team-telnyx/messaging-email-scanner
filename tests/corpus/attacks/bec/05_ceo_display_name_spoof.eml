@@ -1,0 +1,11 @@
+From: "CEO <ceo@company.com>" <attacker@evil.example>
+To: security-review@victim.example
+Date: Mon, 10 Aug 2026 13:29:00 +0000
+Message-ID: <msg-1844-bec-05@corpus.phishing.test>
+Subject: Confidential payment approval
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+Please approve the wire transfer immediately. The counterparty needs funds to=
+day; keep this between us until the announcement.

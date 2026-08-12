@@ -1,0 +1,12 @@
+From: Billing Desk <billing@phishing.test>
+To: security-review@victim.example
+Date: Mon, 10 Aug 2026 13:03:00 +0000
+Message-ID: <msg-1844-phishing_url-04@corpus.phishing.test>
+Subject: Payment receipt requires review
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+MIME-Version: 1.0
+
+A payment receipt is awaiting confirmation.
+
+https://evil.example/paypal/login?receipt=77102

@@ -1,0 +1,3 @@
+action: add_header
+symbols: OCR_SKIPPED, PHISH_URL_HEURISTIC
+description: HTTPS and certificate-security language make a phishing URL look legitimate
