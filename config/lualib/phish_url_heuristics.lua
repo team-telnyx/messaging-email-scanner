@@ -64,6 +64,19 @@ local brand_domains = {
   "dropbox.com",
   "adobe.com",
   "ebay.com",
+  "ebay.co.uk",
+  "ebay.de",
+  "ebay.fr",
+  "ebay.it",
+  "ebay.es",
+  "ebay.ca",
+  "ebay.com.au",
+  "ebay.at",
+  "ebay.be",
+  "ebay.ch",
+  "ebay.ie",
+  "ebay.nl",
+  "ebay.pl",
   "apple.com.cn",
   "apple.co.jp",
   "apple.co.uk",
@@ -136,13 +149,14 @@ end
 
 -- Word-boundary check: brand must appear as a complete path segment,
 -- not as a substring of another word (e.g. "pineapple" should not match "apple").
+-- Delimiters include . and + to catch paypal.html and account+paypal.
 local function path_has_brand_segment(path, brand)
   path = string.lower(path or "")
   if path == "" then
     return false
   end
-  -- Check path segments separated by /, ?, &, =, -, _
-  for segment in path:gmatch("[^/%?&=_-]+") do
+  -- Check path segments separated by /, ?, &, =, -, _, ., +
+  for segment in path:gmatch("[^/%?&=_%.+]+") do
     if segment == brand then
       return true
     end
@@ -150,15 +164,22 @@ local function path_has_brand_segment(path, brand)
   return false
 end
 
-local function brand_in_path(host, path)
+local function brand_in_path(host, path, url, labels)
   path = string.lower(path or "")
   if path == "" then
     return nil
   end
 
-  -- Only check if the host does NOT have the brand as an exact label
+  -- Skip path check only if the host's registered domain is a known
+  -- legitimate brand domain. This prevents login.paypal.top from
+  -- bypassing path detection just because "paypal" is a host label.
+  local domain = registered_domain(url, labels)
+  if brand_domain_set[domain] then
+    return nil
+  end
+
   for _, brand in ipairs(brands) do
-    if path_has_brand_segment(path, brand) and not host_has_brand_label(host) then
+    if path_has_brand_segment(path, brand) then
       return brand
     end
   end
@@ -184,11 +205,20 @@ function exports.check_url(url)
     end
   end
 
-  if #labels >= 4 then
+  -- Excessive subdomains: 4+ labels, but strip leading "www" since
+  -- www.amazon.co.uk (4 labels) is legitimate.
+  local effective_labels = labels
+  if labels[1] == "www" then
+    effective_labels = {}
+    for i = 2, #labels do
+      effective_labels[#effective_labels + 1] = labels[i]
+    end
+  end
+  if #effective_labels >= 4 then
     return "excessive_subdomains", host
   end
 
-  local path_brand = brand_in_path(host, url:get_path())
+  local path_brand = brand_in_path(host, url:get_path(), url, labels)
   if path_brand then
     return "brand_in_path", host, path_brand
   end
