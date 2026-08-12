@@ -208,6 +208,19 @@ eq(matched, true, "From paypall.com Levenshtein distance 1")
 matched = scan({ from_domain = "mail1.company.com", reply_domain = "mail2.company.com" })
 eq(matched, false, "sibling subdomains mail1 vs mail2 should not trigger")
 
+-- R2 fix: Official brand subdomains must NOT trigger Levenshtein false positives
+-- apps.apple.com — "apps" is distance 2 from "apple" but it's a legitimate subdomain
+matched = scan({ url_host = "apps.apple.com" })
+eq(matched, false, "apps.apple.com should not trigger (legitimate Apple subdomain)")
+
+-- app.example.com — "app" is distance 3 from "apple", should not trigger
+matched = scan({ url_host = "app.example.com" })
+eq(matched, false, "app.example.com should not trigger (short non-brand subdomain)")
+
+-- From app.example.com should not trigger
+matched = scan({ from_domain = "app.example.com" })
+eq(matched, false, "From app.example.com should not trigger")
+
 -- Legitimate brand domain (exact match) should NOT fire via Levenshtein (distance 0)
 matched = scan({ from_domain = "paypal.com" })
 eq(matched, false, "exact brand domain paypal.com should not trigger")

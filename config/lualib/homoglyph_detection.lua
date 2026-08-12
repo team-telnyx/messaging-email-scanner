@@ -312,21 +312,31 @@ local function lookalike_domain(task)
         "brand=" .. brand,
       }
     end
-    -- Also check Levenshtein distance against brand list for non-homoglyph lookalikes
-    -- (e.g. paypall.com → distance 1 from "paypal")
-    for _, label in ipairs(domain_labels(host, registered_domain)) do
-      for _, component in ipairs(label_components(label)) do
-        for _, brand in ipairs(brands) do
-          local distance = levenshtein(component, brand)
-          if distance >= 1 and distance <= 2 then
-            return true, 1.0, {
-              "levenshtein",
-              "source=url",
-              "host=" .. host,
-              "label=" .. component,
-              "brand=" .. brand,
-              "distance=" .. distance,
-            }
+    -- Levenshtein check: only compare the SLD (registered domain's first label)
+    -- against the brand list. Skip subdomain labels to avoid false positives
+    -- (e.g. "apps" is distance 2 from "apple" but is a legitimate subdomain).
+    local reg_labels = split_labels(registered_domain or "")
+    if reg_labels and reg_labels[1] then
+      local sld = reg_labels[1]
+      for _, component in ipairs(label_components(sld)) do
+        -- Skip if the SLD IS the exact brand (legitimate brand domain)
+        local is_exact_brand = false
+        for _, b in ipairs(brands) do
+          if component == b then is_exact_brand = true; break end
+        end
+        if not is_exact_brand then
+          for _, brand in ipairs(brands) do
+            local distance = levenshtein(component, brand)
+            if distance >= 1 and distance <= 2 then
+              return true, 1.0, {
+                "levenshtein",
+                "source=url",
+                "host=" .. host,
+                "label=" .. component,
+                "brand=" .. brand,
+                "distance=" .. distance,
+              }
+            end
           end
         end
       end
@@ -345,21 +355,29 @@ local function lookalike_domain(task)
         "brand=" .. brand,
       }
     end
-    -- Levenshtein check for From domain against brand list
-    local from_labels = domain_labels(mime_from_domain, nil)
-    for _, label in ipairs(from_labels) do
-      for _, component in ipairs(label_components(label)) do
-        for _, brand in ipairs(brands) do
-          local distance = levenshtein(component, brand)
-          if distance >= 1 and distance <= 2 then
-            return true, 1.0, {
-              "levenshtein",
-              "source=from",
-              "host=" .. mime_from_domain,
-              "label=" .. component,
-              "brand=" .. brand,
-              "distance=" .. distance,
-            }
+    -- Levenshtein check: only compare the SLD against the brand list
+    local from_reg = registered_domain_from_host(mime_from_domain)
+    local reg_labels = split_labels(from_reg or "")
+    if reg_labels and reg_labels[1] then
+      local sld = reg_labels[1]
+      for _, component in ipairs(label_components(sld)) do
+        local is_exact_brand = false
+        for _, b in ipairs(brands) do
+          if component == b then is_exact_brand = true; break end
+        end
+        if not is_exact_brand then
+          for _, brand in ipairs(brands) do
+            local distance = levenshtein(component, brand)
+            if distance >= 1 and distance <= 2 then
+              return true, 1.0, {
+                "levenshtein",
+                "source=from",
+                "host=" .. mime_from_domain,
+                "label=" .. component,
+                "brand=" .. brand,
+                "distance=" .. distance,
+              }
+            end
           end
         end
       end
@@ -368,8 +386,8 @@ local function lookalike_domain(task)
 
   local mime_reply_to_domain = reply_to_domain(task)
   if mime_from_domain and mime_reply_to_domain and mime_from_domain ~= mime_reply_to_domain then
-    -- Compare registered domains (not full hostnames) to avoid false positives
-    -- on legitimate sibling subdomains like mail1.company.com vs mail2.company.com
+    -- Compare registered domains to avoid false positives on sibling subdomains.
+    -- Use Rspamd's get_tld() when available (URL-based), fall back to our resolver.
     local from_reg = registered_domain_from_host(mime_from_domain)
     local reply_reg = registered_domain_from_host(mime_reply_to_domain)
     if from_reg and reply_reg and from_reg ~= reply_reg then
