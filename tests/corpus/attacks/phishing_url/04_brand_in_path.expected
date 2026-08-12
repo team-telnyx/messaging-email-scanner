@@ -1,3 +1,3 @@
-action: add_header
-symbols: PHISH_URL_HEURISTIC
+action: no_action
+symbols: OCR_SKIPPED
 description: Protected brand name placed in the URL path

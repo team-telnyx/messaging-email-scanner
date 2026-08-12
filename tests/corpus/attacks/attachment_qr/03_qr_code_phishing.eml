@@ -32,8 +32,7 @@ nt; background: #1769aa; border-radius: 4px; text-decoration: none; }
     <h1>Complete MFA enrollment</h1><p>Scan the QR code below with your phone=
  within 15 minutes.</p><img src=3D"cid:verification-qr@phishing.test" wid=
 th=3D"222" height=3D"222" alt=3D"MFA enrollment QR code"><p class=3D"muted">C=
-amera unavailable? Continue at <a href=3D"https://paypal.com.evil.example/qr/veri=
-fy">the verification page</a>.</p>
+can the QR code above to verify.</p>
   </div>
 </body>
 </html>
