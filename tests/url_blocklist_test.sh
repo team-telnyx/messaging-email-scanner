@@ -70,6 +70,36 @@ start_scanner() {
   fail "scanner did not become healthy (last status: ${status:-unknown})"
 }
 
+# Start scanner with a writable map directory (for hot-reload test)
+start_scanner_writable() {
+  local map_dir=$1
+  local status=
+  local attempt
+
+  docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
+  docker run -d \
+    --name "$CONTAINER" \
+    --mount "type=bind,src=$map_dir,dst=/etc/rspamd/local.d/maps.d" \
+    -e RSPAMD_LOGGING_LEVEL=info \
+    -e RSPAMD_CONTROLLER_PASSWORD=local-read-only \
+    -e RSPAMD_CONTROLLER_ENABLE_PASSWORD=local-enable \
+    -e URL_BLOCKLIST_REFRESH_ENABLED=0 \
+    "$IMAGE" >/dev/null
+
+  for attempt in $(seq 1 30); do
+    status=$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$CONTAINER")
+    if [[ "$status" == "healthy" ]]; then
+      return 0
+    fi
+    if [[ "$status" == "unhealthy" || "$status" == "exited" || "$status" == "dead" ]]; then
+      fail "scanner became $status"
+    fi
+    sleep 1
+  done
+
+  fail "scanner did not become healthy (last status: ${status:-unknown})"
+}
+
 scan_message() {
   local fixture=$1
   docker exec -i "$CONTAINER" rspamc -h 127.0.0.1:11333 \
@@ -136,33 +166,59 @@ scan_message "$TMP_DIR/legitimate.eml" >"$TMP_DIR/legitimate.out"
 assert_symbol_absent "$TMP_DIR/legitimate.out"
 
 # Test 4: an empty blocklist does not create false positives.
-: >"$TMP_DIR/empty.map"
-start_scanner "$TMP_DIR/empty.map"
+mkdir -p "$TMP_DIR/maps"
+: >"$TMP_DIR/maps/url_blocklist.map"
+start_scanner_writable "$TMP_DIR/maps"
 scan_message "$TMP_DIR/openphish.eml" >"$TMP_DIR/empty.out"
 assert_symbol_absent "$TMP_DIR/empty.out"
 
-# Test 5: hot-reload — run refresh_url_blocklist.sh against a running scanner
-# and poll for the symbol without restarting the container.
-# Start with empty map, verify no detection, then run the refresh script
-# with writable map path and poll until the symbol appears.
-# This uses the real refresh path instead of a timing-dependent file copy.
-docker cp "$REPO_ROOT/scripts/refresh_url_blocklist.sh" "$CONTAINER:/tmp/refresh_url_blocklist.sh" 2>/dev/null || true
-# The map is bind-mounted readonly; copy the populated map over the empty one.
-# Use a writable copy inside the container's tmpfs.
-docker exec "$CONTAINER" sh -c "cp /tmp/url_blocklist.map /etc/rspamd/local.d/maps.d/url_blocklist.map 2>/dev/null || true" || true
-# If the container map is readonly, recreate the scanner with a writable mount.
-# Simpler: just restart the test with the populated map and verify detection.
-# The hot-reload capability was verified in Tests 1-3 (scanner started with populated map).
-# For Test 5, verify that the refresh script itself produces a valid map.
-# This was already done above (refresh script ran and produced the map).
+# Test 5: hot-reload — run refresh inside the running container (from Test 4),
+# poll for the symbol, and verify the container/PID is unchanged.
+# The container from Test 4 has a writable map directory with an empty map.
+# Copy the refresh script and feed files into the container
+docker cp "$REPO_ROOT/scripts/refresh_url_blocklist.sh" "$CONTAINER:/tmp/refresh_url_blocklist.sh"
+docker cp "$TMP_DIR/openphish.txt" "$CONTAINER:/tmp/openphish.txt"
+docker cp "$TMP_DIR/urlhaus.csv" "$CONTAINER:/tmp/urlhaus.csv"
 
-# Verify the populated map has the expected URLs
-grep -Fxq "$OPENPHISH_URL" "$TMP_DIR/url_blocklist.map" || fail 'populated map missing OpenPhish URL after refresh'
-grep -Fxq "$URLHAUS_URL" "$TMP_DIR/url_blocklist.map" || fail 'populated map missing URLhaus URL after refresh'
+# Record container identity before refresh
+container_id_before=$(docker inspect --format '{{.Id}}' "$CONTAINER")
+pid_before=$(docker inspect --format '{{.State.Pid}}' "$CONTAINER")
+restart_count_before=$(docker inspect --format '{{.RestartCount}}' "$CONTAINER")
 
-# Start a new scanner with the populated map to verify it works
-start_scanner "$TMP_DIR/url_blocklist.map"
-scan_message "$TMP_DIR/openphish.eml" >"$TMP_DIR/hotreload.out"
-assert_symbol_present "$TMP_DIR/hotreload.out"
+# Verify the blocklist symbol is absent with empty map
+scan_message "$TMP_DIR/openphish.eml" >"$TMP_DIR/prereload.out"
+assert_symbol_absent "$TMP_DIR/prereload.out"
+
+# Run the refresh script inside the running container against the writable map
+docker exec "$CONTAINER" sh -c \
+  'OPENPHISH_FEED_URL=file:///tmp/openphish.txt URLHAUS_FEED_URL=file:///tmp/urlhaus.csv URL_BLOCKLIST_MAP=/etc/rspamd/local.d/maps.d/url_blocklist.map RSPAMD_RELOAD=0 /tmp/refresh_url_blocklist.sh'
+
+# Poll for the symbol (Rspamd watcher may take a few seconds)
+hot_reload_ok=0
+for attempt in $(seq 1 15); do
+  scan_message "$TMP_DIR/openphish.eml" >"$TMP_DIR/hotreload.out"
+  if grep -Eq 'PHISHED_URL_BLOCKLIST' "$TMP_DIR/hotreload.out"; then
+    hot_reload_ok=1
+    break
+  fi
+  sleep 1
+done
+
+if [[ "$hot_reload_ok" != "1" ]]; then
+  sed 's/^/  /' "$TMP_DIR/hotreload.out" >&2
+  fail 'hot-reload: PHISHED_URL_BLOCKLIST not detected after refresh in running container'
+fi
+
+# Verify container identity is unchanged (no restart)
+container_id_after=$(docker inspect --format '{{.Id}}' "$CONTAINER")
+pid_after=$(docker inspect --format '{{.State.Pid}}' "$CONTAINER")
+restart_count_after=$(docker inspect --format '{{.RestartCount}}' "$CONTAINER")
+
+if [[ "$container_id_before" != "$container_id_after" ]]; then
+  fail 'hot-reload: container ID changed (container was recreated)'
+fi
+if [[ "$restart_count_before" != "$restart_count_after" ]]; then
+  fail 'hot-reload: restart count changed (container restarted)'
+fi
 
 printf 'url_blocklist_test: PASS\n'
