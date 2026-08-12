@@ -127,9 +127,13 @@ assert_clean("https://sellercentral.amazon.co.uk/")
 assert_clean("https://ebay.com.sg/")
 assert_clean("https://ebay.com.my/")
 assert_clean("https://www.dropbox.com/")
+-- Alias domain negatives: citi.com is legitimate for citibank, x.com for twitter
+assert_clean("https://citi.com/citibank")
+assert_clean("https://x.com/twitter")
 -- Cross-brand: dropbox.com should NOT suppress paypal in path
 assert_flagged("https://www.dropbox.com/scl/fi/attacker/paypal", "brand_in_path")
 -- Rspamd normalizes + to space: "account+paypal" becomes "account paypal"
-assert_flagged("https://evil.com/account+paypal", "brand_in_path")
+-- Test with the normalized form (what Rspamd actually presents to the callback)
+assert_flagged("https://evil.com/account paypal", "brand_in_path")
 
 print("phish_url_heuristics_test: PASS")

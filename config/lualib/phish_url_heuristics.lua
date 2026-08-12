@@ -170,17 +170,28 @@ local function path_has_brand_segment(path, brand)
 end
 
 -- Map brand name to its legitimate domain set for cross-brand suppression.
-local brand_to_domains = {}
-for _, brand in ipairs(brands) do
-  brand_to_domains[brand] = {}
-end
-for _, domain in ipairs(brand_domains) do
-  -- Extract brand from domain (first label before the TLD)
-  local brand_label = string.match(domain, "^([%a]+)%.")
-  if brand_label and brand_to_domains[brand_label] then
-    brand_to_domains[brand_label][domain] = true
-  end
-end
+-- Defined explicitly (not inferred from first label) to handle alias domains
+-- like citi.com (brand=citibank) and x.com (brand=twitter).
+local brand_to_domains = {
+  paypal = { ["paypal.com"] = true },
+  apple = { ["apple.com"] = true, ["apple.com.cn"] = true, ["apple.co.jp"] = true, ["apple.co.uk"] = true },
+  google = { ["google.com"] = true, ["google.co.uk"] = true, ["google.co.jp"] = true, ["google.de"] = true, ["google.fr"] = true },
+  microsoft = { ["microsoft.com"] = true, ["microsoft.co.uk"] = true },
+  amazon = { ["amazon.com"] = true, ["amazon.co.uk"] = true, ["amazon.de"] = true, ["amazon.fr"] = true, ["amazon.it"] = true, ["amazon.es"] = true, ["amazon.ca"] = true, ["amazon.com.mx"] = true, ["amazon.com.br"] = true, ["amazon.co.jp"] = true, ["amazon.in"] = true, ["amazon.com.au"] = true },
+  netflix = { ["netflix.com"] = true },
+  facebook = { ["facebook.com"] = true },
+  instagram = { ["instagram.com"] = true },
+  linkedin = { ["linkedin.com"] = true },
+  twitter = { ["twitter.com"] = true, ["x.com"] = true },
+  bankofamerica = { ["bankofamerica.com"] = true },
+  chase = { ["chase.com"] = true },
+  wellsfargo = { ["wellsfargo.com"] = true },
+  citibank = { ["citibank.com"] = true, ["citi.com"] = true },
+  americanexpress = { ["americanexpress.com"] = true },
+  dropbox = { ["dropbox.com"] = true },
+  adobe = { ["adobe.com"] = true },
+  ebay = { ["ebay.com"] = true, ["ebay.co.uk"] = true, ["ebay.de"] = true, ["ebay.fr"] = true, ["ebay.it"] = true, ["ebay.es"] = true, ["ebay.ca"] = true, ["ebay.com.au"] = true, ["ebay.at"] = true, ["ebay.be"] = true, ["ebay.ch"] = true, ["ebay.ie"] = true, ["ebay.nl"] = true, ["ebay.pl"] = true, ["ebay.com.sg"] = true, ["ebay.com.my"] = true, ["ebay.ph"] = true, ["ebay.com.hk"] = true, ["ebay.com.tw"] = true },
+}
 
 local function brand_in_path(host, path, url, labels)
   path = string.lower(path or "")
