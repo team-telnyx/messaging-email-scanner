@@ -39,7 +39,6 @@ can the QR code above to verify.</p>
 
 --===============3971330204843244202==
 Content-Type: image/png
-Content-Transfer-Encoding: base64
 Content-Disposition: inline; filename="verification_qr.png"
 Content-ID: <verification-qr@phishing.test>
 MIME-Version: 1.0
