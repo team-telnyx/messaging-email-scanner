@@ -332,7 +332,7 @@ Click here to verify: http://evil.example/verify?token=12345
 Your account will be suspended if you do not act now.
 CANARY
 )
-if ! printf '%s' "$canary_output" | grep -qi 'BAYES'; then
+if ! printf '%s' "$canary_output" | grep -qE 'Symbol: BAYES_(SPAM|HAM)'; then
   sleep 5
   canary_output=$(docker exec -i "$CONTAINER" rspamc -h 127.0.0.1:11333 --header 'Settings-ID: outbound' <<'CANARY2' 2>&1
 From: spam-test@example.org
@@ -345,7 +345,7 @@ Click here to verify: http://evil.example/verify?token=12345
 Your account will be suspended if you do not act now.
 CANARY2
 )
-  if ! printf '%s' "$canary_output" | grep -qi 'BAYES'; then
+  if ! printf '%s' "$canary_output" | grep -qE 'Symbol: BAYES_(SPAM|HAM)'; then
     fail_infrastructure "Bayes canary scan did not emit BAYES symbol — classifier is not active despite training (learned=$learned_count)"
   fi
 fi
