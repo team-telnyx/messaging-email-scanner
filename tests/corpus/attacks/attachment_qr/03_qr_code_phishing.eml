@@ -43,15 +43,8 @@ Content-Transfer-Encoding: base64
 Content-Disposition: inline; filename="verification_qr.png"
 Content-ID: <verification-qr@phishing.test>
 MIME-Version: 1.0
+Content-Transfer-Encoding: base64
 
-iVBORw0KGgoAAAANSUhEUgAAAN4AAADeAQAAAAB6HIMaAAABtUlEQVR4nO1YQWrDMBAceQ0+Sj/I
-U+Sflf5MfkoeUJCPAZkts3JzSykNjbfgxYQkg/Ewnh2tFBQPaxseY8AJ4gQPBQNrxjpvadlCwMrf
-o1e2oqoV26X0v0ZkVWu+4SBC34MrlZzqIhVSs6k9/+zOw8BbyiEBsbTXPfM5cJ3p29/c+Rpw5EdU
-rJBrkI801QRAOzD8zTOHp8AthJDYXLBrxBK6woM3ttCvEi2qpUVlRFg1p3k7m5h5NAPcLHuPJPS4
-VLXFIloQCw0cFchdYX/adrbaAN3DNmvNDF6vbKVaLFiLNS5tNLBL32JvKFBPrfQAAPOGU7ZARiyd
-rah332rNjR4gSWrLdvOp7bCvZ7EAi9Rl7NkFcFoYnDpBaoa9/W4Jz75tsdyTgSTNFW7ZSkXjBF7E
-uqwvFr61LZZdHMV7grnNW6GqbDQLB1YfbHyy3WewPW/pAc8rL1iMBctbutdr3sKcwAWCTuhpxhzz
-6wSx6csCwYZGG2zEN9tmGzRLWjadS7bD/dukRa7zVJcGbBfHpx+R0zjWty3hlhAS1Dj7ZNv3vIjv
-aqkL8BjE5Q49nKfNOMH/J8Inv2VZ+H5emcUAAAAASUVORK5CYII=
-
+iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLv
+AAAAAElFTkSuQmCC
 --===============3971330204843244202==--
