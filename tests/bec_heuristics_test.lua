@@ -36,6 +36,22 @@ local function parse_first_addr(raw)
   return nil
 end
 
+-- Simulate Rspamd 3.10.2's get_reply_sender() which returns a string, not a table
+local function parse_reply_sender(raw)
+  if not raw then
+    return nil
+  end
+  local addr = string.match(raw, "<([^>]*@[%w%.%-]+)>")
+  if addr then
+    return addr
+  end
+  addr = string.match(raw, "([%w%.%-]+@[%w%.%-]+)")
+  if addr then
+    return addr
+  end
+  return nil
+end
+
 local function fake_task(subject, body, headers)
   local text_part = {
     get_content = function()
@@ -45,9 +61,11 @@ local function fake_task(subject, body, headers)
 
   local header_map = headers or {}
 
-  -- Build structured from/reply-to addresses (first angle-bracket pair only)
+  -- Build structured from/reply-to addresses matching Rspamd 3.10.2 API:
+  -- get_from("mime") returns array of {addr=...} from MIME From: header
+  -- get_reply_sender() returns a string from Reply-To: header
   local from_addr = parse_first_addr(header_map["From"])
-  local reply_addr = parse_first_addr(header_map["Reply-To"])
+  local reply_sender = parse_reply_sender(header_map["Reply-To"])
 
   return {
     get_subject = function()
@@ -65,11 +83,15 @@ local function fake_task(subject, body, headers)
     get_header = function(self, name)
       return header_map[name]
     end,
-    get_from = function()
-      return from_addr and { from_addr } or nil
+    get_from = function(self, mode)
+      -- Simulate MIME mode returning header addresses
+      if mode == "mime" and from_addr then
+        return { from_addr }
+      end
+      return nil
     end,
-    get_reply_to = function()
-      return reply_addr and { reply_addr } or nil
+    get_reply_sender = function()
+      return reply_sender
     end,
   }
 end

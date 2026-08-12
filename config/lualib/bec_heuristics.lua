@@ -189,12 +189,15 @@ local function bec_callback(task)
   end
 
   -- From/Reply-To domain mismatch (reply-to redirect attack)
-  -- Use Rspamd's structured address parsing (task:get_from / task:get_reply_to)
-  -- which returns parsed MIME addresses, immune to RFC comment tricks.
+  -- Use Rspamd's structured address parsing for MIME headers.
+  -- task:get_from("mime") returns MIME From: header addresses (not envelope sender).
+  -- task:get_reply_sender() returns the Reply-To: header address (pinned 3.10.2 API).
+  -- Both are immune to RFC comment tricks that raw header regex cannot handle.
   local from_domain = nil
   local reply_domain = nil
   if task.get_from then
-    local from_addrs = task:get_from()
+    -- Request MIME mode explicitly — no-arg defaults to envelope sender
+    local from_addrs = task:get_from("mime")
     if from_addrs and from_addrs[1] and from_addrs[1].addr then
       local addr = from_addrs[1].addr
       from_domain = string.match(addr, "@([%w%.%-]+)")
@@ -203,11 +206,11 @@ local function bec_callback(task)
       end
     end
   end
-  if task.get_reply_to then
-    local reply_addrs = task:get_reply_to()
-    if reply_addrs and reply_addrs[1] and reply_addrs[1].addr then
-      local addr = reply_addrs[1].addr
-      reply_domain = string.match(addr, "@([%w%.%-]+)")
+  -- Rspamd 3.10.2 exposes get_reply_sender, not get_reply_to
+  if task.get_reply_sender then
+    local reply_addr = task:get_reply_sender()
+    if reply_addr then
+      reply_domain = string.match(reply_addr, "@([%w%.%-]+)")
       if reply_domain then
         reply_domain = string.lower(reply_domain)
       end
