@@ -77,6 +77,11 @@ local brand_domains = {
   "ebay.ie",
   "ebay.nl",
   "ebay.pl",
+  "ebay.com.sg",
+  "ebay.com.my",
+  "ebay.ph",
+  "ebay.com.hk",
+  "ebay.com.tw",
   "apple.com.cn",
   "apple.co.jp",
   "apple.co.uk",
@@ -149,19 +154,32 @@ end
 
 -- Word-boundary check: brand must appear as a complete path segment,
 -- not as a substring of another word (e.g. "pineapple" should not match "apple").
--- Delimiters include . and + to catch paypal.html and account+paypal.
+-- Rspamd normalizes + to space in URLs, so include space in the delimiter set.
 local function path_has_brand_segment(path, brand)
   path = string.lower(path or "")
   if path == "" then
     return false
   end
-  -- Check path segments separated by /, ?, &, =, -, _, ., +
-  for segment in path:gmatch("[^/%?&=_%.+]+") do
+  -- Tokenize on all non-alphanumeric boundaries (covers /, ?, &, =, -, _, ., +, space, etc.)
+  for segment in path:gmatch("[%a%d]+") do
     if segment == brand then
       return true
     end
   end
   return false
+end
+
+-- Map brand name to its legitimate domain set for cross-brand suppression.
+local brand_to_domains = {}
+for _, brand in ipairs(brands) do
+  brand_to_domains[brand] = {}
+end
+for _, domain in ipairs(brand_domains) do
+  -- Extract brand from domain (first label before the TLD)
+  local brand_label = string.match(domain, "^([%a]+)%.")
+  if brand_label and brand_to_domains[brand_label] then
+    brand_to_domains[brand_label][domain] = true
+  end
 end
 
 local function brand_in_path(host, path, url, labels)
@@ -170,17 +188,17 @@ local function brand_in_path(host, path, url, labels)
     return nil
   end
 
-  -- Skip path check only if the host's registered domain is a known
-  -- legitimate brand domain. This prevents login.paypal.top from
-  -- bypassing path detection just because "paypal" is a host label.
   local domain = registered_domain(url, labels)
-  if brand_domain_set[domain] then
-    return nil
-  end
 
   for _, brand in ipairs(brands) do
     if path_has_brand_segment(path, brand) then
-      return brand
+      -- Only suppress if THIS specific brand's domain set contains the registered domain.
+      -- This prevents dropbox.com from suppressing paypal detection in the path.
+      if brand_to_domains[brand] and brand_to_domains[brand][domain] then
+        -- The brand in the path IS the owner of this domain — legitimate, skip
+      else
+        return brand
+      end
     end
   end
 
@@ -205,16 +223,16 @@ function exports.check_url(url)
     end
   end
 
-  -- Excessive subdomains: 4+ labels, but strip leading "www" since
-  -- www.amazon.co.uk (4 labels) is legitimate.
-  local effective_labels = labels
-  if labels[1] == "www" then
-    effective_labels = {}
-    for i = 2, #labels do
-      effective_labels[#effective_labels + 1] = labels[i]
-    end
-  end
-  if #effective_labels >= 4 then
+  -- Excessive subdomains: count labels BEYOND the registered domain.
+  -- e.g. sellercentral.amazon.co.uk > registered domain = amazon.co.uk (3 labels)
+  -- > 1 subdomain label (sellercentral) > NOT excessive.
+  -- com.security.verify.account.xyz > registered domain = account.xyz (2 labels)
+  -- > 2 subdomain labels > NOT excessive (but caught by subdomain impersonation if brand).
+  -- Only flag 4+ subdomain labels beyond the registered domain.
+  local reg_domain = registered_domain(url, labels)
+  local reg_labels = host_labels(reg_domain)
+  local subdomain_count = #labels - #reg_labels
+  if subdomain_count >= 4 then
     return "excessive_subdomains", host
   end
 
