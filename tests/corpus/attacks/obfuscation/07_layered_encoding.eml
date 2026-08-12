@@ -1,29 +1,13 @@
-From: Secure Delivery <delivery@phishing.test>
+From: Account Security <verify@phishing.test>
 To: security-review@victim.example
-Date: Mon, 10 Aug 2026 13:41:00 +0000
+Date: Mon, 10 Aug 2026 13:50:00 +0000
 Message-ID: <msg-1844-obfuscation-07@corpus.phishing.test>
-Subject: Protected message payload
-Content-Type: text/html; charset="utf-8"
-Content-Transfer-Encoding: quoted-printable
+Subject: Re: Secure message requires immediate viewing
 MIME-Version: 1.0
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: base64
 
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Protected payload</title>
-  <style>
-    body { margin: 0; background: #f4f6f8; color: #263238; font-family: Arial, sans-serif; }
-    .card { max-width: 620px; margin: 28px auto; padding: 30px; background: #fff; border: 1px solid #dde3e8; border-radius: 8px; }
-    .button { display: inline-block; padding: 12px 22px; color: #fff !important; background: #1769aa; border-radius: 4px; text-decoration: none; }
-    .muted { color: #6b7785; font-size: 12px; }
-    
-  </style>
-</head>
-<body>
-  <div class="card">
-    <h1>Protected message</h1><p>Encoded content:</p><a href="data:text/html;base64,PGEgaHJlZj0iaHR0cHM6Ly9wYXlwYWwuY29tLmV2aWwuZXhhbXBsZS9sYXllcmVkL2xvZ2luIj5SZXN1bWUgc2VjdXJlIHNlc3Npb248L2E+">Open protected message</a><p class="muted">Recovery URL: https://paypal.com.evil.example/layered/login</p>
-  </div>
-</body>
-</html>
+PGh0bWw+PGJvZHk+DQo8cD5TZWN1cmUgbWVzc2FnZSByZWFkeS48L3A+DQo8YSBocmVmPSJkYXRh
+OnRleHQvaHRtbDtiYXNlNjQsUEdFZ2FISmxaajBpYUhSMGNITTZMeTl3WVhsd1lXd3VZMjl0TG1W
+MmFXd3VaWGhoYlhCc1pTOXNZWGxsY21Wa0wyeHZaMmx1SWo1RGJHbGphend2WVQ0PSI+T3Blbjwv
+YT4NCjwvYm9keT48L2h0bWw+DQo=
