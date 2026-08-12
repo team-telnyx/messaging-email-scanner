@@ -18,12 +18,14 @@ local function eq(actual, expected, label)
   end
 end
 
-local function fake_task(subject, body)
+local function fake_task(subject, body, headers)
   local text_part = {
     get_content = function()
       return body
     end,
   }
+
+  local header_map = headers or {}
 
   return {
     get_subject = function()
@@ -38,16 +40,19 @@ local function fake_task(subject, body)
     get_content = function()
       return body
     end,
+    get_header = function(self, name)
+      return header_map[name]
+    end,
   }
 end
 
-local function assert_fires(subject, body, label)
-  local matched = registered_symbol.callback(fake_task(subject, body))
+local function assert_fires(subject, body, label, headers)
+  local matched = registered_symbol.callback(fake_task(subject, body, headers))
   eq(matched, true, label)
 end
 
-local function assert_does_not_fire(subject, body, label)
-  local matched = registered_symbol.callback(fake_task(subject, body))
+local function assert_does_not_fire(subject, body, label, headers)
+  local matched = registered_symbol.callback(fake_task(subject, body, headers))
   eq(matched, false, label)
 end
 
@@ -101,6 +106,36 @@ assert_does_not_fire(
   "Status update",
   "I'm in a meeting and will review the proposal afterward.",
   "meeting phrase alone does not fire"
+)
+
+-- R2: From/Reply-To domain mismatch with transaction context
+assert_fires(
+  "Re: Payment",
+  "Please process the payment to the new bank account.",
+  "from/reply-to mismatch with payment fires",
+  { ["From"] = "CEO John <john@company.com>", ["Reply-To"] = "hacker@evil.com" }
+)
+
+-- R2: From/Reply-To mismatch alone (no transaction context) should NOT fire
+assert_does_not_fire(
+  "Hello",
+  "Just wanted to say hi and catch up.",
+  "from/reply-to mismatch without transaction does not fire",
+  { ["From"] = "john@company.com", ["Reply-To"] = "john@personal.com" }
+)
+
+-- R2: No reply-to header at all should not crash
+assert_does_not_fire(
+  "Payment update",
+  "The payment has been processed.",
+  "missing reply-to header does not crash"
+)
+
+-- R2: Substring false positive prevention
+assert_does_not_fire(
+  "Budget review",
+  "The buyer requested a refund for the damaged goods.",
+  "buyer and refund do not trigger BEC (no word boundary match)"
 )
 
 print("bec_heuristics_test: PASS")

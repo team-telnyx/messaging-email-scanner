@@ -11,9 +11,10 @@ local gift_card_terms = {
   "apple card",
 }
 
+-- Use word-boundary matching to prevent "buy" matching "buyer", "fund" matching "refund", etc.
 local purchase_terms = {
   "purchase",
-  "buy",
+  "buy ",
   "need you to",
   "pickup",
   "grab",
@@ -39,7 +40,8 @@ local urgency_terms = {
 local confidentiality_terms = {
   "handle discreetly",
   "don't call",
-  "between us",
+  "between us ",
+  "between us\n",
   "i'm in a meeting",
   "can't talk",
   "text me only",
@@ -49,8 +51,9 @@ local transaction_terms = {
   "payment",
   "transfer",
   "purchase",
-  "wire",
-  "fund",
+  "wire transfer",
+  "fund ",
+  "funds ",
 }
 
 local function contains_any(text, terms)
@@ -108,6 +111,26 @@ local function task_text(task)
   return string.lower(table.concat(chunks, "\n"))
 end
 
+-- Extract domain from email address in a header value.
+-- Handles "Name <user@domain>" and "user@domain" formats.
+-- Returns the domain (lowercase) or nil if no email address found.
+local function extract_domain_from_header(header_value)
+  if not header_value then
+    return nil
+  end
+  -- Try to find <user@domain> first (RFC 5322 angle-addr form)
+  local domain = string.match(header_value, "<[^>]*@([%w%.%-]+)>")
+  if domain then
+    return string.lower(domain)
+  end
+  -- Fallback: bare user@domain
+  domain = string.match(header_value, "@([%w%.%-]+)")
+  if domain then
+    return string.lower(domain)
+  end
+  return nil
+end
+
 local function bec_callback(task)
   local text = task_text(task)
 
@@ -127,13 +150,17 @@ local function bec_callback(task)
   end
 
   -- From/Reply-To domain mismatch (reply-to redirect attack)
-  local from_header = task:get_header("From")
-  local reply_to = task:get_header("Reply-To")
+  -- Use task:get_header_raw to get the raw header, then extract domain
+  local from_header = nil
+  local reply_to = nil
+  if task.get_header then
+    from_header = task:get_header("From")
+    reply_to = task:get_header("Reply-To")
+  end
   if from_header and reply_to then
-    local from_domain = string.match(from_header, "@([%w%.%-]+)")
-    local reply_domain = string.match(reply_to, "@([%w%.%-]+)")
-    if from_domain and reply_domain and
-       string.lower(from_domain) ~= string.lower(reply_domain) then
+    local from_domain = extract_domain_from_header(from_header)
+    local reply_domain = extract_domain_from_header(reply_to)
+    if from_domain and reply_domain and from_domain ~= reply_domain then
       -- Only flag if the email also mentions payment/transfer (otherwise
       -- legitimate reply-to mismatches like personal email would fire)
       if contains_any(text, transaction_terms) then
