@@ -135,7 +135,40 @@ assert_does_not_fire(
 assert_does_not_fire(
   "Budget review",
   "The buyer requested a refund for the damaged goods.",
-  "buyer and refund do not trigger BEC (no word boundary match)"
+  "buyer and refund do not trigger BEC (word boundary)"
+)
+
+-- R3: Punctuation-delimited word boundaries
+assert_fires(
+  "Gift cards",
+  "Can you buy: two amazon gift cards please",
+  "buy: with colon triggers word-boundary match"
+)
+
+-- R3: "between us," with comma
+assert_fires(
+  "Confidential",
+  "Keep this between us, the payment needs to go today.",
+  "between us, with comma triggers word-boundary match"
+)
+
+-- R3: "fund" in "refund" should NOT match (word boundary)
+assert_does_not_fire(
+  "Refund",
+  "The refund has been processed and will arrive in 3 days.",
+  "refund does not trigger fund (word boundary)"
+)
+
+-- R3: Fake angle-address in display name doesn't mask real mailbox mismatch
+-- From has fake "ceo@company.com" in quoted display name, but the REAL mailbox
+-- is <hacker@evil.com>. Reply-To is <ceo@company.com>. Domains DON'T match.
+-- The old regex would extract "company.com" from the quoted fake and miss the real
+-- mismatch. The new code uses the last <...> which is the real mailbox.
+assert_fires(
+  "Re: Payment",
+  "Please process the payment to the new account.",
+  "fake display-name angle-addr doesn't mask real mailbox mismatch",
+  { ["From"] = '"ceo@company.com" <hacker@evil.com>', ["Reply-To"] = "<ceo@company.com>" }
 )
 
 print("bec_heuristics_test: PASS")

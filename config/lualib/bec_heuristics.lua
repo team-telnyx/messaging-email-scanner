@@ -11,10 +11,10 @@ local gift_card_terms = {
   "apple card",
 }
 
--- Use word-boundary matching to prevent "buy" matching "buyer", "fund" matching "refund", etc.
+-- Terms use word-boundary matching via contains_word() — no trailing-space hacks needed.
 local purchase_terms = {
   "purchase",
-  "buy ",
+  "buy",
   "need you to",
   "pickup",
   "grab",
@@ -40,8 +40,7 @@ local urgency_terms = {
 local confidentiality_terms = {
   "handle discreetly",
   "don't call",
-  "between us ",
-  "between us\n",
+  "between us",
   "i'm in a meeting",
   "can't talk",
   "text me only",
@@ -52,13 +51,41 @@ local transaction_terms = {
   "transfer",
   "purchase",
   "wire transfer",
-  "fund ",
-  "funds ",
+  "fund",
+  "funds",
 }
+
+-- Word-boundary matching: check that the term is not part of a larger word.
+-- "fund" won't match "refund", "buy" won't match "buyer", but "buy:" and "buy " both match.
+-- Allows trailing "s" for plural forms (e.g. "gift card" matches "gift cards").
+local function contains_word(text, term)
+  local start = 1
+  while true do
+    local s, e = string.find(text, term, start, true)
+    if not s then
+      return false
+    end
+    -- Check character before: must be non-letter (or start of text)
+    local before_ok = (s == 1) or not string.match(string.sub(text, s - 1, s - 1), "%a")
+    -- Check character after: must be non-letter, non-digit (or end of text)
+    -- Allow trailing "s" for plurals (gift cards, funds)
+    local after_char = ""
+    if e < #text then
+      after_char = string.sub(text, e + 1, e + 1)
+    end
+    local after_ok = (e == #text) or 
+      not string.match(after_char, "[%a%d]") or
+      (after_char == "s" and (e + 1 == #text or not string.match(string.sub(text, e + 2, e + 2), "%a")))
+    if before_ok and after_ok then
+      return true
+    end
+    start = e + 1
+  end
+end
 
 local function contains_any(text, terms)
   for _, term in ipairs(terms) do
-    if string.find(text, term, 1, true) then
+    if contains_word(text, term) then
       return true
     end
   end
@@ -113,17 +140,28 @@ end
 
 -- Extract domain from email address in a header value.
 -- Handles "Name <user@domain>" and "user@domain" formats.
+-- Uses the LAST angle-bracket pair (the actual mailbox per RFC 5322),
+-- preventing quoted display names with fake addresses from masking the real one.
 -- Returns the domain (lowercase) or nil if no email address found.
 local function extract_domain_from_header(header_value)
   if not header_value then
     return nil
   end
-  -- Try to find <user@domain> first (RFC 5322 angle-addr form)
-  local domain = string.match(header_value, "<[^>]*@([%w%.%-]+)>")
+  -- Find the last <user@domain> in the header (actual mailbox)
+  local domain = nil
+  local search_start = 1
+  while true do
+    local s, e, d = string.find(header_value, "<[^>]*@([%w%.%-]+)>", search_start)
+    if not s then
+      break
+    end
+    domain = d
+    search_start = e + 1
+  end
   if domain then
     return string.lower(domain)
   end
-  -- Fallback: bare user@domain
+  -- Fallback: bare user@domain (no angle brackets)
   domain = string.match(header_value, "@([%w%.%-]+)")
   if domain then
     return string.lower(domain)
