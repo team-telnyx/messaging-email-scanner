@@ -18,6 +18,24 @@ local function eq(actual, expected, label)
   end
 end
 
+-- Parse the first <user@domain> from a raw header (simulates Rspamd's structured parsing)
+-- which correctly ignores RFC comments and only returns the actual mailbox.
+local function parse_first_addr(raw)
+  if not raw then
+    return nil
+  end
+  local addr = string.match(raw, "<([^>]*@[%w%.%-]+)>")
+  if addr then
+    return { addr = addr }
+  end
+  -- Bare address
+  addr = string.match(raw, "([%w%.%-]+@[%w%.%-]+)")
+  if addr then
+    return { addr = addr }
+  end
+  return nil
+end
+
 local function fake_task(subject, body, headers)
   local text_part = {
     get_content = function()
@@ -26,6 +44,10 @@ local function fake_task(subject, body, headers)
   }
 
   local header_map = headers or {}
+
+  -- Build structured from/reply-to addresses (first angle-bracket pair only)
+  local from_addr = parse_first_addr(header_map["From"])
+  local reply_addr = parse_first_addr(header_map["Reply-To"])
 
   return {
     get_subject = function()
@@ -42,6 +64,12 @@ local function fake_task(subject, body, headers)
     end,
     get_header = function(self, name)
       return header_map[name]
+    end,
+    get_from = function()
+      return from_addr and { from_addr } or nil
+    end,
+    get_reply_to = function()
+      return reply_addr and { reply_addr } or nil
     end,
   }
 end
@@ -159,6 +187,13 @@ assert_does_not_fire(
   "refund does not trigger fund (word boundary)"
 )
 
+-- R4: "funds2" should NOT match "fund" (plural s + digit is not a boundary)
+assert_does_not_fire(
+  "Accounting",
+  "Handle discreetly. Reconcile the funds2 ledger.",
+  "funds2 does not trigger fund (digit after plural s)"
+)
+
 -- R3: Fake angle-address in display name doesn't mask real mailbox mismatch
 -- From has fake "ceo@company.com" in quoted display name, but the REAL mailbox
 -- is <hacker@evil.com>. Reply-To is <ceo@company.com>. Domains DON'T match.
@@ -169,6 +204,15 @@ assert_fires(
   "Please process the payment to the new account.",
   "fake display-name angle-addr doesn't mask real mailbox mismatch",
   { ["From"] = '"ceo@company.com" <hacker@evil.com>', ["Reply-To"] = "<ceo@company.com>" }
+)
+
+-- R4: RFC comment with fake angle-address in Reply-To should not bypass detection
+-- Reply-To has a trailing comment with a fake angle address
+assert_fires(
+  "Re: Payment",
+  "Please process the payment to the new account.",
+  "RFC comment in reply-to doesn't bypass mismatch",
+  { ["From"] = "<ceo@trusted.com>", ["Reply-To"] = "<fraud@evil.com> (CEO <ceo@trusted.com>)" }
 )
 
 print("bec_heuristics_test: PASS")

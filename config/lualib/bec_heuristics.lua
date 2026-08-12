@@ -68,14 +68,15 @@ local function contains_word(text, term)
     -- Check character before: must be non-letter (or start of text)
     local before_ok = (s == 1) or not string.match(string.sub(text, s - 1, s - 1), "%a")
     -- Check character after: must be non-letter, non-digit (or end of text)
-    -- Allow trailing "s" for plurals (gift cards, funds)
+    -- Allow trailing "s" for plurals (gift cards, funds), but the character
+    -- after "s" must also be non-letter, non-digit (prevents "funds2" matching "fund").
     local after_char = ""
     if e < #text then
       after_char = string.sub(text, e + 1, e + 1)
     end
-    local after_ok = (e == #text) or 
+    local after_ok = (e == #text) or
       not string.match(after_char, "[%a%d]") or
-      (after_char == "s" and (e + 1 == #text or not string.match(string.sub(text, e + 2, e + 2), "%a")))
+      (after_char == "s" and (e + 1 == #text or not string.match(string.sub(text, e + 2, e + 2), "[%a%d]")))
     if before_ok and after_ok then
       return true
     end
@@ -188,22 +189,42 @@ local function bec_callback(task)
   end
 
   -- From/Reply-To domain mismatch (reply-to redirect attack)
-  -- Use task:get_header_raw to get the raw header, then extract domain
-  local from_header = nil
-  local reply_to = nil
-  if task.get_header then
-    from_header = task:get_header("From")
-    reply_to = task:get_header("Reply-To")
-  end
-  if from_header and reply_to then
-    local from_domain = extract_domain_from_header(from_header)
-    local reply_domain = extract_domain_from_header(reply_to)
-    if from_domain and reply_domain and from_domain ~= reply_domain then
-      -- Only flag if the email also mentions payment/transfer (otherwise
-      -- legitimate reply-to mismatches like personal email would fire)
-      if contains_any(text, transaction_terms) then
-        return true
+  -- Use Rspamd's structured address parsing (task:get_from / task:get_reply_to)
+  -- which returns parsed MIME addresses, immune to RFC comment tricks.
+  local from_domain = nil
+  local reply_domain = nil
+  if task.get_from then
+    local from_addrs = task:get_from()
+    if from_addrs and from_addrs[1] and from_addrs[1].addr then
+      local addr = from_addrs[1].addr
+      from_domain = string.match(addr, "@([%w%.%-]+)")
+      if from_domain then
+        from_domain = string.lower(from_domain)
       end
+    end
+  end
+  if task.get_reply_to then
+    local reply_addrs = task:get_reply_to()
+    if reply_addrs and reply_addrs[1] and reply_addrs[1].addr then
+      local addr = reply_addrs[1].addr
+      reply_domain = string.match(addr, "@([%w%.%-]+)")
+      if reply_domain then
+        reply_domain = string.lower(reply_domain)
+      end
+    end
+  end
+  -- Fallback to raw header parsing if structured API not available
+  if not from_domain and task.get_header then
+    from_domain = extract_domain_from_header(task:get_header("From"))
+  end
+  if not reply_domain and task.get_header then
+    reply_domain = extract_domain_from_header(task:get_header("Reply-To"))
+  end
+  if from_domain and reply_domain and from_domain ~= reply_domain then
+    -- Only flag if the email also mentions payment/transfer (otherwise
+    -- legitimate reply-to mismatches like personal email would fire)
+    if contains_any(text, transaction_terms) then
+      return true
     end
   end
 
