@@ -1,0 +1,58 @@
+From: Identity Center <identity@phishing-test.com>
+To: security-review@victim.example
+Date: Mon, 10 Aug 2026 13:45:00 +0000
+Message-ID: <msg-1844-attachment_qr-03@corpus.phishing-test.com>
+Subject: Scan to complete MFA enrollment
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="===============3971330204843244202=="
+
+--===============3971330204843244202==
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+<!doctype html>
+<html lang=3D"en">
+<head>
+  <meta charset=3D"utf-8">
+  <meta name=3D"viewport" content=3D"width=3Ddevice-width, initial-scale=3D1">
+  <title>MFA enrollment</title>
+  <style>
+    body { margin: 0; background: #f4f6f8; color: #263238; font-family: Arial=
+, sans-serif; }
+    .card { max-width: 620px; margin: 28px auto; padding: 30px; background: #=
+fff; border: 1px solid #dde3e8; border-radius: 8px; }
+    .button { display: inline-block; padding: 12px 22px; color: #fff !importa=
+nt; background: #1769aa; border-radius: 4px; text-decoration: none; }
+    .muted { color: #6b7785; font-size: 12px; }
+   =20
+  </style>
+</head>
+<body>
+  <div class=3D"card">
+    <h1>Complete MFA enrollment</h1><p>Scan the QR code below with your phone=
+ within 15 minutes.</p><img src=3D"cid:verification-qr@phishing-test.com" wid=
+th=3D"222" height=3D"222" alt=3D"MFA enrollment QR code"><p class=3D"muted">C=
+amera unavailable? Continue at <a href=3D"https://paypal.com.evil.com/qr/veri=
+fy">the verification page</a>.</p>
+  </div>
+</body>
+</html>
+
+--===============3971330204843244202==
+Content-Type: image/png
+Content-Transfer-Encoding: base64
+Content-Disposition: inline; filename="verification_qr.png"
+Content-ID: <verification-qr@phishing-test.com>
+MIME-Version: 1.0
+
+iVBORw0KGgoAAAANSUhEUgAAAN4AAADeAQAAAAB6HIMaAAABtUlEQVR4nO1YQWrDMBAceQ0+Sj/I
+U+Sflf5MfkoeUJCPAZkts3JzSykNjbfgxYQkg/Ewnh2tFBQPaxseY8AJ4gQPBQNrxjpvadlCwMrf
+o1e2oqoV26X0v0ZkVWu+4SBC34MrlZzqIhVSs6k9/+zOw8BbyiEBsbTXPfM5cJ3p29/c+Rpw5EdU
+rJBrkI801QRAOzD8zTOHp8AthJDYXLBrxBK6woM3ttCvEi2qpUVlRFg1p3k7m5h5NAPcLHuPJPS4
+VLXFIloQCw0cFchdYX/adrbaAN3DNmvNDF6vbKVaLFiLNS5tNLBL32JvKFBPrfQAAPOGU7ZARiyd
+rah332rNjR4gSWrLdvOp7bCvZ7EAi9Rl7NkFcFoYnDpBaoa9/W4Jz75tsdyTgSTNFW7ZSkXjBF7E
+uqwvFr61LZZdHMV7grnNW6GqbDQLB1YfbHyy3WewPW/pAc8rL1iMBctbutdr3sKcwAWCTuhpxhzz
+6wSx6csCwYZGG2zEN9tmGzRLWjadS7bD/dukRa7zVJcGbBfHpx+R0zjWty3hlhAS1Dj7ZNv3vIjv
+aqkL8BjE5Q49nKfNOMH/J8Inv2VZ+H5emcUAAAAASUVORK5CYII=
+
+--===============3971330204843244202==--

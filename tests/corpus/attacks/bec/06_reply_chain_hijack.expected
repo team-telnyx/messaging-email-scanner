@@ -1,0 +1,3 @@
+action: add_header
+symbols: BEC_PATTERN
+description: Hijacked reply chain redirects payment correspondence to an attacker

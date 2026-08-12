@@ -1,0 +1,52 @@
+From: Finance Automation <automation@phishing-test.com>
+To: security-review@victim.example
+Date: Mon, 10 Aug 2026 13:46:00 +0000
+Message-ID: <msg-1844-attachment_qr-04@corpus.phishing-test.com>
+Subject: Updated invoice template
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="===============9209714903422972982=="
+
+--===============9209714903422972982==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+Enable content in the attached macro-enabled document to refresh the invoice =
+totals. If updates are blocked, open https://evil.com/microsoft/update.
+
+--===============9209714903422972982==
+Content-Type: application/vnd.ms-word.document.macroEnabled.12
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="invoice_update.docm"
+MIME-Version: 1.0
+
+UEsDBBQAAAAIAIFdDF3jams5CgEAAE8CAAATAAAAW0NvbnRlbnRfVHlwZXNdLnhtbJ2SwU7DMBBE
+7/0Ky1cUO3BACCXpAcoReigfsHE2iSFeW7Yb2r/HaSNASCkSR2t25s2uXKwPZmAj+qAtlfxa5Jwh
+Kdto6kr+unvK7jgLEaiBwRKW/IiBr6tVsTs6DCyZKZS8j9HdSxlUjwaCsA4pKa31BmJ6+k46UO/Q
+obzJ81upLEWkmMUpg1crxopHbGE/RLY5JOXcxeMQOHs4z064koNzg1YQky5Han6BshkikvM0E3rt
+wlUa4HIJMonLjIvWWtMf9UzIbNtqhWKsYevtG6o4572kk3vdINuCj89gklt+WN/Ixqq9SYnicrM5
+frKIL4sB5e2GoB4wqaDpx+6LwO9q4v8bFfL0H6pPUEsDBBQAAAAIAIFdDF0gG4bqsgAAAC4BAAAL
+AAAAX3JlbHMvLnJlbHONz7sOgjAUBuCdp2jOLgUHYwyFxZiwGnyApj2URnpJWy+8vR0cxDg4ntt3
+8jfd08zkjiFqZxnUZQUErXBSW8XgMpw2eyAxcSv57CwyWDBC1xbNGWee8k2ctI8kIzYymFLyB0qj
+mNDwWDqPNk9GFwxPuQyKei6uXCHdVtWOhk8D2oKQFUt6ySD0sgYyLB7/4d04aoFHJ24Gbfrx5Wsj
+yzwoTAweLkgq3+0ys0BzSrqK2b4AUEsDBBQAAAAIAIFdDF0zJ2XMBgEAALkBAAARAAAAd29yZC9k
+b2N1bWVudC54bWyNkEFPAyEQhe/9FYS7S+3BmE13e1ET7/oDKMx2SYEhM9PW/nuhrsZ48vIGQuZ7
+77HdfaSozkAcMA/6vltrBdmhD/kw6Pe3l7tHrVhs9jZihkFfgfVuXG0vvUd3SpBFVULm/jLoWaT0
+xrCbIVnusECubxNSslKvdDAXJF8IHTBXgxTNZr1+MMmGrBcM/QeD0xQcPC0BviAE0UotwXMorMeV
+UjXjHv11rLM0oSYyPme7j6AcZmnpBRXBRMCzkjmwqvEEnIBXIZ+x2nRb09aa0k3LAr9B52sBiiEf
+FfXBD5pe/Ub/cmtluLaBc4idw2RScISMk5hT8VbgL/0HuHg1vdVYtdP3p4+fUEsDBBQAAAAIAIFd
+DF2VYRNj8QAAAMwBAAAcAAAAd29yZC9fcmVscy9kb2N1bWVudC54bWwucmVsc3WRz24CIRCH7z4F
+mbvL6qFpmmW9tCYemjSNfQCE2V0UGAK40bcvtmmt6Xpk/nzz/UKzOjnLRozJkBewqGpg6BVp43sB
+H9v1/BFYytJracmjgDMmWLWz5h2tzGUnDSYkViA+CRhyDk+cJzWgk6migL50OopO5vKMPQ9SHWSP
+fFnXDzz+ZUA7Y+wGyzZaQNzoBbDtOeA/vDMqUqIuV4ocp64zagrMx518i7RHlQtIxh6zgGut2hkP
+/O7x5Z3jE9m+DZ5JHR36PGUyFFK0xh+uIhdsKlwcjf3K8ZuKH4OWGX9GX0kXi5dTxuilvRg3/OYT
+2k9QSwMEFAAAAAgAgV0MXdwu7tFIAAAARgAAABMAAAB3b3JkL3ZiYVByb2plY3QuYmlu8w121zW0
+MDHR9fRzDQrRDXNy1HXzjAgJDXJlcAwN8fcPcPVjyCgpKSi20tdPLcvM0UvOz9XPzUwuyi/OTyvR
+Ly1ISSxJZQAAUEsBAhQDFAAAAAgAgV0MXeNqazkKAQAATwIAABMAAAAAAAAAAAAAAIABAAAAAFtD
+b250ZW50X1R5cGVzXS54bWxQSwECFAMUAAAACACBXQxdIBuG6rIAAAAuAQAACwAAAAAAAAAAAAAA
+gAE7AQAAX3JlbHMvLnJlbHNQSwECFAMUAAAACACBXQxdMydlzAYBAAC5AQAAEQAAAAAAAAAAAAAA
+gAEWAgAAd29yZC9kb2N1bWVudC54bWxQSwECFAMUAAAACACBXQxdlWETY/EAAADMAQAAHAAAAAAA
+AAAAAAAAgAFLAwAAd29yZC9fcmVscy9kb2N1bWVudC54bWwucmVsc1BLAQIUAxQAAAAIAIFdDF3c
+Lu7RSAAAAEYAAAATAAAAAAAAAAAAAACAAXYEAAB3b3JkL3ZiYVByb2plY3QuYmluUEsFBgAAAAAF
+AAUARAEAAO8EAAAAAA==
+
+--===============9209714903422972982==--

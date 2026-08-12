@@ -1,0 +1,3 @@
+action: add_header
+symbols: BEC_PATTERN
+description: Employee impersonation requesting a payroll direct-deposit change

@@ -1,0 +1,38 @@
+From: Document Delivery <delivery@phishing-test.com>
+To: security-review@victim.example
+Date: Mon, 10 Aug 2026 13:43:00 +0000
+Message-ID: <msg-1844-attachment_qr-01@corpus.phishing-test.com>
+Subject: Secure document attached
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="===============7956567071360476417=="
+
+--===============7956567071360476417==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+A secure document is attached. Download the HTML file and sign in to review i=
+t.
+
+--===============7956567071360476417==
+Content-Type: text/html
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="secure_document.html"
+MIME-Version: 1.0
+
+PCFkb2N0eXBlIGh0bWw+CjxodG1sIGxhbmc9ImVuIj4KPGhlYWQ+CiAgPG1ldGEgY2hhcnNldD0i
+dXRmLTgiPgogIDxtZXRhIG5hbWU9InZpZXdwb3J0IiBjb250ZW50PSJ3aWR0aD1kZXZpY2Utd2lk
+dGgsIGluaXRpYWwtc2NhbGU9MSI+CiAgPHRpdGxlPlNlY3VyZSBkb2N1bWVudDwvdGl0bGU+CiAg
+PHN0eWxlPgogICAgYm9keSB7IG1hcmdpbjogMDsgYmFja2dyb3VuZDogI2Y0ZjZmODsgY29sb3I6
+ICMyNjMyMzg7IGZvbnQtZmFtaWx5OiBBcmlhbCwgc2Fucy1zZXJpZjsgfQogICAgLmNhcmQgeyBt
+YXgtd2lkdGg6IDYyMHB4OyBtYXJnaW46IDI4cHggYXV0bzsgcGFkZGluZzogMzBweDsgYmFja2dy
+b3VuZDogI2ZmZjsgYm9yZGVyOiAxcHggc29saWQgI2RkZTNlODsgYm9yZGVyLXJhZGl1czogOHB4
+OyB9CiAgICAuYnV0dG9uIHsgZGlzcGxheTogaW5saW5lLWJsb2NrOyBwYWRkaW5nOiAxMnB4IDIy
+cHg7IGNvbG9yOiAjZmZmICFpbXBvcnRhbnQ7IGJhY2tncm91bmQ6ICMxNzY5YWE7IGJvcmRlci1y
+YWRpdXM6IDRweDsgdGV4dC1kZWNvcmF0aW9uOiBub25lOyB9CiAgICAubXV0ZWQgeyBjb2xvcjog
+IzZiNzc4NTsgZm9udC1zaXplOiAxMnB4OyB9CiAgICAKICA8L3N0eWxlPgo8L2hlYWQ+Cjxib2R5
+PgogIDxkaXYgY2xhc3M9ImNhcmQiPgogICAgPGgxPlNoYXJlZCBkb2N1bWVudDwvaDE+PHA+U2ln
+biBpbiB0byByZXZpZXcgdGhlIGRvY3VtZW50LjwvcD48YSBjbGFzcz0iYnV0dG9uIiBocmVmPSJo
+dHRwczovL3BheXBhbC5jb20uZXZpbC5jb20vYXR0YWNobWVudC9sb2dpbiI+UmV2aWV3IGRvY3Vt
+ZW50PC9hPgogIDwvZGl2Pgo8L2JvZHk+CjwvaHRtbD4=
+
+--===============7956567071360476417==--

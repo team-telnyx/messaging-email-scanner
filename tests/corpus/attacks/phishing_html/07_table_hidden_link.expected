@@ -1,0 +1,3 @@
+action: add_header
+symbols: PHISH_URL_HEURISTIC
+description: Table layout hides a phishing anchor in a zero-size cell

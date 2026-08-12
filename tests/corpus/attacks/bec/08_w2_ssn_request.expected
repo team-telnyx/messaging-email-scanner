@@ -1,0 +1,3 @@
+action: add_header
+symbols: BEC_PATTERN
+description: Tax fraud requests employee W-2 and Social Security records

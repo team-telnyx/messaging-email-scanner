@@ -1,0 +1,3 @@
+action: add_header
+symbols: PHISH_URL_HEURISTIC
+description: Crypto wallet recovery pretext requests a seed phrase

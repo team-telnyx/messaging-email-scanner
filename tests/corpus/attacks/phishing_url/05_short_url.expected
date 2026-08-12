@@ -1,0 +1,3 @@
+action: add_header
+symbols: PHISH_URL_HEURISTIC
+description: URL shortener used to conceal a phishing destination

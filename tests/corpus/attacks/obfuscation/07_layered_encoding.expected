@@ -1,0 +1,3 @@
+action: add_header
+symbols: PHISH_URL_HEURISTIC
+description: Quoted-printable HTML wraps a base64-encoded phishing payload

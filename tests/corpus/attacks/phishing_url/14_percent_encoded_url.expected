@@ -1,0 +1,3 @@
+action: add_header
+symbols: PHISH_URL_HEURISTIC
+description: Percent-encoded URL characters obscure a branded phishing path

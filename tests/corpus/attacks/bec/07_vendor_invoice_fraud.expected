@@ -1,0 +1,3 @@
+action: reject
+symbols: BEC_PATTERN, LOOKALIKE_DOMAIN
+description: Lookalike vendor domain supplies fraudulent invoice payment details

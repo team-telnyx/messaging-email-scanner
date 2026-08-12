@@ -1,0 +1,38 @@
+From: Vendor Billing <billing@phishing-test.com>
+To: security-review@victim.example
+Date: Mon, 10 Aug 2026 13:44:00 +0000
+Message-ID: <msg-1844-attachment_qr-02@corpus.phishing-test.com>
+Subject: Invoice 84721
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="===============3092681432942991327=="
+
+--===============3092681432942991327==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+Please review invoice 84721 using the secure link inside the attached PDF. If=
+ the PDF viewer blocks links, use https://evil.com/paypal/invoice.
+
+--===============3092681432942991327==
+Content-Type: application/pdf
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="invoice_84721.pdf"
+MIME-Version: 1.0
+
+JVBERi0xLjQKJU1TRy0xODQ0IHNhZmUgZml4dHVyZQoxIDAgb2JqCjw8IC9UeXBlIC9DYXRhbG9n
+IC9QYWdlcyAyIDAgUiA+PgplbmRvYmoKMiAwIG9iago8PCAvVHlwZSAvUGFnZXMgL0tpZHMgWzMg
+MCBSXSAvQ291bnQgMSA+PgplbmRvYmoKMyAwIG9iago8PCAvVHlwZSAvUGFnZSAvUGFyZW50IDIg
+MCBSIC9NZWRpYUJveCBbMCAwIDYxMiA3OTJdIC9SZXNvdXJjZXMgPDwgL0ZvbnQgPDwgL0YxIDYg
+MCBSID4+ID4+IC9Db250ZW50cyA1IDAgUiAvQW5ub3RzIFs0IDAgUl0gPj4KZW5kb2JqCjQgMCBv
+YmoKPDwgL1R5cGUgL0Fubm90IC9TdWJ0eXBlIC9MaW5rIC9SZWN0IFs3MCA3MTAgMzAwIDczNV0g
+L0JvcmRlciBbMCAwIDFdIC9BIDw8IC9TIC9VUkkgL1VSSSAoaHR0cHM6Ly9ldmlsLmNvbS9wYXlw
+YWwvaW52b2ljZSkgPj4gPj4KZW5kb2JqCjUgMCBvYmoKPDwgL0xlbmd0aCA2MSA+PgpzdHJlYW0K
+QlQgL0YxIDEyIFRmIDcyIDcyMCBUZCAoT3BlbiB0aGUgc2VjdXJlIGludm9pY2UgcG9ydGFsKSBU
+aiBFVAplbmRzdHJlYW0KZW5kb2JqCjYgMCBvYmoKPDwgL1R5cGUgL0ZvbnQgL1N1YnR5cGUgL1R5
+cGUxIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iagp4cmVmCjAgNwowMDAwMDAwMDAwIDY1
+NTM1IGYgCjAwMDAwMDAwMzIgMDAwMDAgbiAKMDAwMDAwMDA4MSAwMDAwMCBuIAowMDAwMDAwMTM4
+IDAwMDAwIG4gCjAwMDAwMDAyODAgMDAwMDAgbiAKMDAwMDAwMDQyNCAwMDAwMCBuIAowMDAwMDAw
+NTM1IDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgNyAvUm9vdCAxIDAgUiA+PgpzdGFydHhyZWYK
+NjA1CiUlRU9GCg==
+
+--===============3092681432942991327==--

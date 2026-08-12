@@ -1,0 +1,14 @@
+From: Project Office <projects@phishing-test.com>
+To: security-review@victim.example
+Date: Mon, 10 Aug 2026 13:12:00 +0000
+Message-ID: <msg-1844-phishing_url-13@corpus.phishing-test.com>
+Subject: Resources from today's call
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+MIME-Version: 1.0
+
+Resources:
+- Agenda: https://example.com/agenda
+- Documentation: https://www.rfc-editor.org/rfc/rfc5322
+- Required account review: https://paypal.com.evil.com/login
+- Status: https://example.org/status

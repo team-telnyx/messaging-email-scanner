@@ -1,0 +1,3 @@
+action: add_header
+symbols: PHISH_URL_HEURISTIC
+description: Base64 transfer encoding conceals phishing content on the wire

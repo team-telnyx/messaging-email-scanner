@@ -1,0 +1,3 @@
+action: add_header
+symbols: PHISH_URL_HEURISTIC
+description: HTML data URI containing a base64-encoded phishing redirect

@@ -1,0 +1,3 @@
+action: add_header
+symbols: PHISH_URL_HEURISTIC
+description: Fake unsubscribe link and List-Unsubscribe header point to phishing

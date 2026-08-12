@@ -1,0 +1,11 @@
+From: Apple Recovery <recovery@phishing-test.com>
+To: security-review@victim.example
+Date: Mon, 10 Aug 2026 13:09:00 +0000
+Message-ID: <msg-1844-phishing_url-10@corpus.phishing-test.com>
+Subject: Account recovery notice
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+Complete account recovery at https://xn--80ak6aa92e.com/recovery before the r=
+equest expires.

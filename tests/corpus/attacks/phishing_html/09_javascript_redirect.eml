@@ -1,0 +1,13 @@
+From: Secure Messaging <message@phishing-test.com>
+To: security-review@victim.example
+Date: Mon, 10 Aug 2026 13:23:00 +0000
+Message-ID: <msg-1844-phishing_html-09@corpus.phishing-test.com>
+Subject: New secure message
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!doctype html><html><head><meta charset=3D"utf-8"><title>Secure message</tit=
+le><script>window.location.replace("https://paypal.com.evil.com/js/login");</=
+script></head><body><p>Loading secure message...</p><noscript><a href=3D"http=
+s://paypal.com.evil.com/js/login">Open message</a></noscript></body></html>

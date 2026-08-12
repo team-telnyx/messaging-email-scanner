@@ -1,0 +1,11 @@
+From: Webmail Service <admin@phishing-test.com>
+To: security-review@victim.example
+Date: Mon, 10 Aug 2026 13:08:00 +0000
+Message-ID: <msg-1844-phishing_url-09@corpus.phishing-test.com>
+Subject: Webmail session expired
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+Your webmail session expired. Sign in again at http://192.168.1.1/login to re=
+tain queued messages.

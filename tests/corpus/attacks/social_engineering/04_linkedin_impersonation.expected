@@ -1,0 +1,3 @@
+action: add_header
+symbols: PHISH_URL_HEURISTIC
+description: Social-network impersonation lures the recipient to a phishing profile
