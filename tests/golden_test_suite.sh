@@ -259,48 +259,62 @@ for attempt in $(seq 1 60); do
 done
 [[ "$status" == 'healthy' ]] || fail_infrastructure "scanner did not become healthy (last status: ${status:-unknown})"
 
-# BLOCK 1: Verify Bayes is connected and trained
+# BLOCK 1: Verify Bayes is connected and trained — fail closed if unavailable
 printf 'Verifying Bayes classifier...\n'
-bayes_stats=$(docker exec "$CONTAINER" rspamc -h 127.0.0.1:11334 -P golden-read-only stat 2>&1 || true)
-if printf '%s' "$bayes_stats" | grep -qi 'Messages learned.*0'; then
-  # Bayes has 0 learned messages — need to train
-  printf 'Training Bayes classifier with minimal corpus...\n'
-  # Train spam from attack corpus (first 20 spam emails to exceed min_learns=20)
-  local_learned=0
+bayes_stats=$(docker exec "$CONTAINER" rspamc -h 127.0.0.1:11334 -P golden-read-only stat 2>&1)
+if [[ $? -ne 0 ]]; then
+  fail_infrastructure 'could not retrieve Bayes stats from controller'
+fi
+
+# Parse exact learned count
+learned_count=$(printf '%s' "$bayes_stats" | grep -oE 'Messages learned: *[0-9]+' | grep -oE '[0-9]+' | head -1)
+if [[ -z "$learned_count" ]]; then
+  learned_count=0
+fi
+learned_count=$((learned_count + 0))  # Ensure numeric
+
+if [[ "$learned_count" -lt 20 ]]; then
+  # Bayes has fewer than min_learns — need to train
+  printf 'Training Bayes classifier (current learned=%d, need >=%d)...\n' "$learned_count" 20
+  spam_learned=0
+  ham_learned=0
+
+  # Train spam from attack corpus
   while IFS= read -r eml; do
-    docker exec -i "$CONTAINER" rspamc -h 127.0.0.1:11334 -P golden-enable learn_spam <"$eml" >/dev/null 2>&1 || true
-    local_learned=$((local_learned + 1))
-    [[ "$local_learned" -ge 25 ]] && break
+    if docker exec -i "$CONTAINER" rspamc -h 127.0.0.1:11334 -P golden-enable learn_spam <"$eml" >/dev/null 2>&1; then
+      spam_learned=$((spam_learned + 1))
+    fi
+    [[ "$spam_learned" -ge 25 ]] && break
   done < <(find "$CORPUS_ROOT/attacks" -type f -name '*.eml' -print | LC_ALL=C sort | head -25)
 
-  # Train ham from legitimate corpus (first 20 legit emails)
+  # Train ham from legitimate corpus (exclude fp_stress)
   while IFS= read -r eml; do
-    docker exec -i "$CONTAINER" rspamc -h 127.0.0.1:11334 -P golden-enable learn_ham <"$eml" >/dev/null 2>&1 || true
-    local_learned=$((local_learned + 1))
-    [[ "$local_learned" -ge 50 ]] && break
+    if docker exec -i "$CONTAINER" rspamc -h 127.0.0.1:11334 -P golden-enable learn_ham <"$eml" >/dev/null 2>&1; then
+      ham_learned=$((ham_learned + 1))
+    fi
+    [[ "$ham_learned" -ge 25 ]] && break
   done < <(find "$CORPUS_ROOT/legitimate" -type f -name '*.eml' -not -path '*/fp_stress/*' -print | LC_ALL=C sort | head -25)
 
   sleep 3  # Allow Redis to persist
-fi
 
-# Verify Bayes is now active
-bayes_check=$(docker exec "$CONTAINER" rspamc -h 127.0.0.1:11333 --header 'Settings-ID: outbound' <<'BAYES_TEST' 2>&1 || true
-From: test@example.org
-To: test@example.net
-Subject: test
-Message-ID: <bayes-check@test>
-Content-Type: text/plain
+  printf 'Training complete: %d spam, %d ham learned\n' "$spam_learned" "$ham_learned"
 
-test message
-BAYES_TEST
-)
-if ! printf '%s' "$bayes_check" | grep -qi 'BAYES\|statistics'; then
-  # Bayes might still be warming up — check stats
-  stats=$(docker exec "$CONTAINER" rspamc -h 127.0.0.1:11334 -P golden-read-only stat 2>&1 || true)
-  if printf '%s' "$stats" | grep -qi 'Messages learned.*0'; then
-    printf 'WARNING: Bayes classifier has 0 learned messages — Bayes-dependent tests may not exercise the full classifier\n' >&2
+  if [[ "$spam_learned" -lt 20 || "$ham_learned" -lt 20 ]]; then
+    fail_infrastructure "Bayes training failed: learned $spam_learned spam, $ham_learned ham (need >=20 each for min_learns)"
   fi
+
+  # Re-check stats
+  bayes_stats=$(docker exec "$CONTAINER" rspamc -h 127.0.0.1:11334 -P golden-read-only stat 2>&1)
+  learned_count=$(printf '%s' "$bayes_stats" | grep -oE 'Messages learned: *[0-9]+' | grep -oE '[0-9]+' | head -1)
+  learned_count=${learned_count:-0}
+  learned_count=$((learned_count + 0))
 fi
+
+if [[ "$learned_count" -lt 20 ]]; then
+  fail_infrastructure "Bayes classifier has $learned_count learned messages (need >=20). Redis or training may have failed."
+fi
+
+printf 'Bayes classifier ready: %d messages learned\n' "$learned_count"
 
 printf 'Scanning golden corpus...\n'
 while IFS= read -r eml; do
