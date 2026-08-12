@@ -169,6 +169,10 @@ assert_symbol_absent "$TMP_DIR/legitimate.out"
 mkdir -p "$TMP_DIR/maps"
 : >"$TMP_DIR/maps/url_blocklist.map"
 start_scanner_writable "$TMP_DIR/maps"
+startup_logs=$(docker logs "$CONTAINER" 2>&1)
+if grep -Fq 'Populating URL blocklist' <<<"$startup_logs"; then
+  fail 'URL_BLOCKLIST_REFRESH_ENABLED=0 should skip initial blocklist population'
+fi
 scan_message "$TMP_DIR/openphish.eml" >"$TMP_DIR/empty.out"
 assert_symbol_absent "$TMP_DIR/empty.out"
 
