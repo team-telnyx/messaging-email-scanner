@@ -1,0 +1,3 @@
+action: no_action
+symbols:    # symbols that must NOT fire (empty = any spam symbol)
+description: Family email about a wire transfer to a child for college

@@ -1,0 +1,40 @@
+From: Platform Releases <releases@company.com>
+To: Engineering <engineering@company.com>
+Date: Wed, 12 Aug 2026 12:50:00 +0000
+Message-ID: <msg1845-046-01_release_notes_version_link@corpus.company.com>
+Subject: Release notes: Version 1.23.0
+MIME-Version: 1.0
+Content-Type: multipart/alternative;
+ boundary="===============0788378831888087153=="
+
+--===============0788378831888087153==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+Engineering,
+
+Version 1.23.0 is now available in the staging environment. This release adds=
+ audit-log filters, improves CSV exports, and fixes the retry counter shown o=
+n delayed jobs.
+
+Read the release notes:
+https://engineering.company.com/releases/version-1-23-0
+
+Production deployment remains scheduled for the normal Tuesday maintenance wi=
+ndow.
+
+Platform Releases
+
+--===============0788378831888087153==
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!doctype html><html><body style=3D"font-family:Arial,sans-serif"><h1>Version=
+ 1.23.0</h1><p>This release adds audit-log filters, improves CSV exports, and=
+ fixes the retry counter shown on delayed jobs.</p><p><a href=3D"https://engi=
+neering.company.com/releases/version-1-23-0">Read the Version 1.23.0 release =
+notes</a></p><p>Production deployment remains scheduled for Tuesday.</p></bod=
+y></html>
+
+--===============0788378831888087153==--

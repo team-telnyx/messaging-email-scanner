@@ -1,0 +1,37 @@
+From: Infrastructure Docs <infra-docs@company.com>
+To: Network Engineering <network@company.com>
+Date: Wed, 12 Aug 2026 13:05:00 +0000
+Message-ID: <msg1845-049-04_technical_dotted_notation@corpus.company.com>
+Subject: Network runbook update: gateway 10.24.8.17
+MIME-Version: 1.0
+Content-Type: multipart/alternative;
+ boundary="===============0582289264927436637=="
+
+--===============0582289264927436637==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+Network team,
+
+The staging runbook now documents gateway 10.24.8.17, resolver 10.24.0.53, an=
+d agent Version 4.12.3. The examples use CIDR block 10.24.8.0/24 and dotted c=
+onfiguration keys such as retry.policy.max_attempts.
+
+Review the internal documentation at:
+https://docs.company.com/runbooks/staging-network
+
+These addresses are private examples for the staging network and are not publ=
+ic login endpoints.
+
+--===============0582289264927436637==
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!doctype html><html><body style=3D"font-family:Arial,sans-serif"><h2>Staging=
+ network runbook updated</h2><p>The guide documents gateway <code>10.24.8.17<=
+/code>, resolver <code>10.24.0.53</code>, agent Version 4.12.3, and key <code=
+>retry.policy.max_attempts</code>.</p><p><a href=3D"https://docs.company.com/=
+runbooks/staging-network">Review the internal runbook</a></p></body></html>
+
+--===============0582289264927436637==--

@@ -1,0 +1,20 @@
+From: GitHub <notifications@github.com>
+To: Dana Scott <dana.scott@company.com>
+Date: Wed, 12 Aug 2026 12:55:00 +0000
+Message-ID: <msg1845-047-02_code_review_urls@corpus.company.com>
+Subject: [platform/api] Review requested on PR #842
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+Dana Scott requested your review on company/platform-api pull request #842: "=
+Preserve callback URL validation errors."
+
+Review the changes:
+https://github.com/company/platform-api/pull/842
+
+Excerpt from config_test.go:
+    callbackURL :=3D "https://api.company.com/v2/events/callback"
+    docsURL :=3D "https://docs.company.com/api/callbacks"
+
+You received this because you are a requested reviewer.

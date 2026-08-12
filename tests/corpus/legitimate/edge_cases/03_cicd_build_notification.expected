@@ -1,0 +1,3 @@
+action: no_action
+symbols:    # symbols that must NOT fire (empty = any spam symbol)
+description: CI/CD build notification with build number and links

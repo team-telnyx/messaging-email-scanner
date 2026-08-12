@@ -1,0 +1,3 @@
+action: no_action
+symbols: BEC_PATTERN
+description: Legitimate urgent wire transfer from CFO for quarterly close — known FP risk (wire transfer + urgent + immediately trigger in business context)

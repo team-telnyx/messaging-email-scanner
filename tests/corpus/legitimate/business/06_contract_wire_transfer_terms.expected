@@ -1,0 +1,3 @@
+action: no_action
+symbols:    # symbols that must NOT fire (empty = any spam symbol)
+description: Contract negotiation with wire transfer in the payment terms
