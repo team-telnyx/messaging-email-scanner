@@ -217,8 +217,80 @@ restart_count_after=$(docker inspect --format '{{.RestartCount}}' "$CONTAINER")
 if [[ "$container_id_before" != "$container_id_after" ]]; then
   fail 'hot-reload: container ID changed (container was recreated)'
 fi
+if [[ "$pid_before" != "$pid_after" ]]; then
+  fail 'hot-reload: Rspamd PID changed (container was restarted)'
+fi
 if [[ "$restart_count_before" != "$restart_count_after" ]]; then
   fail 'hot-reload: restart count changed (container restarted)'
+fi
+
+# Test 6: entrypoint refresh loop — verify the background scheduler in entrypoint.sh
+# populates the blocklist automatically without manual script invocation.
+# Start a new scanner with a short refresh interval and mounted feeds.
+CONTAINER2="url-blocklist-test-loop-$$"
+TMP_DIR2=$(mktemp -d "$REPO_ROOT/.url-blocklist-test2.XXXXXX")
+cleanup2() {
+  docker rm -f "$CONTAINER2" >/dev/null 2>&1 || true
+  rm -rf "$TMP_DIR2"
+}
+trap 'cleanup; cleanup2' EXIT
+
+# Prepare feed files and empty map in the writable map dir
+mkdir -p "$TMP_DIR2/maps"
+: >"$TMP_DIR2/maps/url_blocklist.map"
+cat >"$TMP_DIR2/openphish.txt" <<EOF
+$OPENPHISH_URL
+EOF
+cat >"$TMP_DIR2/urlhaus.csv" <<EOF
+################################################################
+# id,dateadded,url,url_status,last_online,threat,tags,urlhaus_link,reporter
+"1","2026-08-11 12:00:00","$URLHAUS_URL","online","2026-08-11 12:00:00","malware_download","test","https://urlhaus.abuse.ch/url/1/","test"
+EOF
+
+# Start scanner with the entrypoint refresh loop enabled and a 2-second interval
+docker rm -f "$CONTAINER2" >/dev/null 2>&1 || true
+docker run -d \
+  --name "$CONTAINER2" \
+  --mount "type=bind,src=$TMP_DIR2/maps,dst=/etc/rspamd/local.d/maps.d" \
+  --mount "type=bind,src=$TMP_DIR2/openphish.txt,dst=/tmp/openphish.txt,readonly" \
+  --mount "type=bind,src=$TMP_DIR2/urlhaus.csv,dst=/tmp/urlhaus.csv,readonly" \
+  -e RSPAMD_LOGGING_LEVEL=info \
+  -e RSPAMD_CONTROLLER_PASSWORD=local-read-only \
+  -e RSPAMD_CONTROLLER_ENABLE_PASSWORD=local-enable \
+  -e URL_BLOCKLIST_REFRESH_ENABLED=1 \
+  -e URL_BLOCKLIST_REFRESH_INTERVAL=2 \
+  -e OPENPHISH_FEED_URL=file:///tmp/openphish.txt \
+  -e URLHAUS_FEED_URL=file:///tmp/urlhaus.csv \
+  "$IMAGE" >/dev/null
+
+# Wait for scanner to be healthy
+for attempt in $(seq 1 30); do
+  status=$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$CONTAINER2")
+  if [[ "$status" == "healthy" ]]; then
+    break
+  fi
+  if [[ "$status" == "unhealthy" || "$status" == "exited" || "$status" == "dead" ]]; then
+    fail "loop scanner became $status"
+  fi
+  sleep 1
+done
+
+# Poll for the symbol (the entrypoint loop should refresh after 2 seconds)
+loop_ok=0
+for attempt in $(seq 1 15); do
+  docker exec -i "$CONTAINER2" rspamc -h 127.0.0.1:11333 \
+    --header 'Settings-ID: outbound' <"$TMP_DIR/openphish.eml" >"$TMP_DIR2/loop.out"
+  if grep -Eq 'PHISHED_URL_BLOCKLIST' "$TMP_DIR2/loop.out"; then
+    loop_ok=1
+    break
+  fi
+  sleep 1
+done
+
+if [[ "$loop_ok" != "1" ]]; then
+  docker logs "$CONTAINER2" >&2 2>/dev/null || true
+  sed 's/^/  /' "$TMP_DIR2/loop.out" >&2
+  fail 'entrypoint loop: PHISHED_URL_BLOCKLIST not detected after scheduled refresh'
 fi
 
 printf 'url_blocklist_test: PASS\n'
