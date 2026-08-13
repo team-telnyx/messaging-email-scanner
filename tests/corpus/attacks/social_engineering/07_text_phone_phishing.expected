@@ -1,0 +1,3 @@
+action: add_header
+symbols: TEXT_SOCIAL_ENGINEERING
+description: External sender claims an internal authority role and urgently requests a phone callback without URLs or traditional BEC transaction terms
