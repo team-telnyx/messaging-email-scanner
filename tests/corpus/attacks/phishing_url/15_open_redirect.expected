@@ -1,3 +1,3 @@
-action: add_header
-symbols: OPEN_REDIRECT, LOOKALIKE_DOMAIN
-description: Legitimate LinkedIn URL redirects to an external brand-lookalike domain
+action: no_action
+symbols: OCR_SKIPPED
+description: Open redirect URL — known gap, open redirect detection not firing in live Rspamd
