@@ -24,6 +24,7 @@ local brands = {
   "dropbox",
   "adobe",
   "ebay",
+  "office365",
 }
 
 local confusables = {

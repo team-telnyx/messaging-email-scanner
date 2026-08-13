@@ -168,23 +168,45 @@ local function check_anchor(task, tag)
   return nil
 end
 
-local function html_link_extraction(task)
-  local mismatches = {}
-
+local function foreach_html_anchor(task, callback)
   for _, part in ipairs(task:get_text_parts() or {}) do
     if part:is_html() then
       local html = part:get_html()
       if html then
         html:foreach_tag("a", function(tag)
-          local mismatch = check_anchor(task, tag)
-          if mismatch then
-            mismatches[#mismatches + 1] = mismatch
-          end
+          callback(tag)
           return false
         end)
       end
     end
   end
+end
+
+-- Rspamd's native URL set may collapse multipart/alternative representations.
+-- Parse every HTML text part directly so URL rules can inspect each anchor href
+-- independently of the URL selected from text/plain.
+function exports.extract_html_urls(task)
+  local urls = {}
+
+  foreach_html_anchor(task, function(tag)
+    local url = parse_href(task, tag:get_attribute("href"))
+    if url then
+      urls[#urls + 1] = url
+    end
+  end)
+
+  return urls
+end
+
+local function html_link_extraction(task)
+  local mismatches = {}
+
+  foreach_html_anchor(task, function(tag)
+    local mismatch = check_anchor(task, tag)
+    if mismatch then
+      mismatches[#mismatches + 1] = mismatch
+    end
+  end)
 
   if #mismatches > 0 then
     -- The symbol is one-shot per message, but retain evidence for every mismatch.

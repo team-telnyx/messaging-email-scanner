@@ -9,8 +9,6 @@ _G.rspamd_config = {
   end,
 }
 
-local heuristics = require "phish_url_heuristics"
-
 local function eq(actual, expected, label)
   if actual ~= expected then
     error(string.format("%s: expected %s, got %s", label, tostring(expected), tostring(actual)))
@@ -60,10 +58,23 @@ local function url(value)
   })
 end
 
+package.preload["rspamd_url"] = function()
+  return {
+    create = function(_, value)
+      return url(value)
+    end,
+  }
+end
+
+local heuristics = require "phish_url_heuristics"
+
 local function scan(value)
   local task = {
     get_urls = function()
       return { url(value) }
+    end,
+    get_text_parts = function()
+      return {}
     end,
   }
 
@@ -101,25 +112,38 @@ local expected_brands = {
   "paypal", "apple", "google", "microsoft", "amazon", "netflix",
   "facebook", "instagram", "linkedin", "twitter", "bankofamerica",
   "chase", "wellsfargo", "citibank", "americanexpress", "dropbox",
-  "adobe", "ebay",
+  "adobe", "ebay", "office365",
 }
 for _, brand in ipairs(expected_brands) do
   eq(heuristics.brand_set[brand], true, "brand list contains " .. brand)
 end
 
 assert_flagged("https://paypal.com.evil.com/login", "subdomain_impersonation")
+assert_flagged("https://office365.login-secure-portal.com/password-reset", "subdomain_impersonation")
+assert_flagged("https://login.office365.login-secure-portal.com/password-reset", "subdomain_impersonation")
+assert_flagged("https://office365-login.login-secure-portal.com/password-reset", "subdomain_impersonation")
+assert_flagged("https://office365.google.com/password-reset", "subdomain_impersonation")
 assert_flagged("https://a.b.c.d.account.xyz/login", "excessive_subdomains")
 assert_flagged("https://evil.com/paypal/login", "brand_in_path")
 assert_clean("https://paypal.com/")
 assert_clean("https://mail.google.com/")
+assert_clean("https://office365.microsoft.com/")
+assert_clean("https://microsoft.office.com/")
+assert_clean("https://microsoft.office365.com/")
+assert_clean("https://www.office.com/")
+assert_clean("https://www.office365.com/")
 assert_clean("https://google.com/search?q=paypal")
 
 -- R1/R2 regressions
 assert_clean("https://www.amazon.co.uk/")
 assert_clean("https://apple.com.cn/")
 assert_clean("https://notpaypal.com/")
+assert_clean("https://notoffice365.com/")
 assert_clean("https://example.com/pineapple-cake")
-assert_flagged("https://login.paypal.top/paypal/login", "brand_in_path")
+-- Reserved example domains are documentation placeholders, not attacker-owned
+-- registered domains, so brand-like subdomains on them are safe in fixtures.
+assert_clean("https://office365.example.org/password-reset")
+assert_flagged("https://login.paypal.top/paypal/login", "subdomain_impersonation")
 assert_flagged("https://evil.com/paypal.html", "brand_in_path")
 
 -- R3 regressions

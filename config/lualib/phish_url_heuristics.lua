@@ -1,5 +1,7 @@
 -- MSG-1830: local phishing URL heuristics that do not require blocklists.
 
+local html_link_extraction = require "html_link_extraction"
+
 local exports = {}
 
 local SYMBOL = "PHISH_URL_HEURISTIC"
@@ -23,6 +25,7 @@ local brands = {
   "dropbox",
   "adobe",
   "ebay",
+  "office365",
 }
 
 local brand_set = {}
@@ -37,6 +40,8 @@ local brand_domains = {
   "apple.com",
   "google.com",
   "microsoft.com",
+  "office.com",
+  "office365.com",
   "amazon.com",
   "amazon.co.uk",
   "amazon.de",
@@ -97,6 +102,15 @@ for _, d in ipairs(brand_domains) do
   brand_domain_set[d] = true
 end
 
+-- These exact domains are reserved for documentation. Treating a brand-like
+-- subdomain as attacker controlled would make the RFC-safe fixture URL
+-- office365.example.org look malicious on its own.
+local reserved_example_domains = {
+  ["example.com"] = true,
+  ["example.net"] = true,
+  ["example.org"] = true,
+}
+
 exports.brands = brands
 exports.brand_set = brand_set
 exports.brand_domain_set = brand_domain_set
@@ -114,12 +128,17 @@ local function host_labels(host)
   return labels
 end
 
--- Check if any label of the host exactly matches a brand name.
--- This prevents "notpaypal.com" from matching brand "paypal".
+-- Check if any complete label or hyphen-delimited label component matches a
+-- brand. This catches office365-login.evil.test without matching notpaypal.com.
 local function host_has_brand_label(host)
   for label in host:gmatch("[^.]+") do
     if brand_set[label] then
       return label
+    end
+    for component in label:gmatch("[^%-_]+") do
+      if brand_set[component] then
+        return component
+      end
     end
   end
   return nil
@@ -176,7 +195,7 @@ local brand_to_domains = {
   paypal = { ["paypal.com"] = true },
   apple = { ["apple.com"] = true, ["apple.com.cn"] = true, ["apple.co.jp"] = true, ["apple.co.uk"] = true },
   google = { ["google.com"] = true, ["google.co.uk"] = true, ["google.co.jp"] = true, ["google.de"] = true, ["google.fr"] = true },
-  microsoft = { ["microsoft.com"] = true, ["microsoft.co.uk"] = true },
+  microsoft = { ["microsoft.com"] = true, ["microsoft.co.uk"] = true, ["office.com"] = true, ["office365.com"] = true },
   amazon = { ["amazon.com"] = true, ["amazon.co.uk"] = true, ["amazon.de"] = true, ["amazon.fr"] = true, ["amazon.it"] = true, ["amazon.es"] = true, ["amazon.ca"] = true, ["amazon.com.mx"] = true, ["amazon.com.br"] = true, ["amazon.co.jp"] = true, ["amazon.in"] = true, ["amazon.com.au"] = true },
   netflix = { ["netflix.com"] = true },
   facebook = { ["facebook.com"] = true },
@@ -191,6 +210,7 @@ local brand_to_domains = {
   dropbox = { ["dropbox.com"] = true },
   adobe = { ["adobe.com"] = true },
   ebay = { ["ebay.com"] = true, ["ebay.co.uk"] = true, ["ebay.de"] = true, ["ebay.fr"] = true, ["ebay.it"] = true, ["ebay.es"] = true, ["ebay.ca"] = true, ["ebay.com.au"] = true, ["ebay.at"] = true, ["ebay.be"] = true, ["ebay.ch"] = true, ["ebay.ie"] = true, ["ebay.nl"] = true, ["ebay.pl"] = true, ["ebay.com.sg"] = true, ["ebay.com.my"] = true, ["ebay.ph"] = true, ["ebay.com.hk"] = true, ["ebay.com.tw"] = true },
+  office365 = { ["office.com"] = true, ["office365.com"] = true, ["microsoft.com"] = true },
 }
 
 local function brand_in_path(host, path, url, labels)
@@ -223,13 +243,14 @@ function exports.check_url(url)
   end
 
   local labels = host_labels(host)
-  local first_label = labels[1]
 
-  -- Subdomain impersonation: first label is a brand but the registered domain
-  -- is NOT a known legitimate brand domain.
-  if brand_set[first_label] then
+  -- Subdomain impersonation: any subdomain label is a brand but the registered
+  -- domain is not one of that brand's legitimate domains.
+  local subdomain_brand = host_has_brand_label(host)
+  if subdomain_brand then
     local domain = registered_domain(url, labels)
-    if not brand_domain_set[domain] then
+    local legitimate_domains = brand_to_domains[subdomain_brand] or {}
+    if not legitimate_domains[domain] and not reserved_example_domains[domain] then
       return "subdomain_impersonation", host
     end
   end
@@ -256,7 +277,32 @@ function exports.check_url(url)
 end
 
 local function phish_url_heuristic(task)
+  local urls = {}
+  local seen = {}
+
+  local function add_url(url)
+    if not url then
+      return
+    end
+
+    local key = tostring(url)
+    if not seen[key] then
+      seen[key] = true
+      urls[#urls + 1] = url
+    end
+  end
+
   for _, url in ipairs(task:get_urls() or {}) do
+    add_url(url)
+  end
+
+  -- Do not rely on task:get_urls() to preserve every multipart/alternative
+  -- representation. Explicitly parse hrefs from every HTML text part.
+  for _, url in ipairs(html_link_extraction.extract_html_urls(task)) do
+    add_url(url)
+  end
+
+  for _, url in ipairs(urls) do
     local reason, host, brand = exports.check_url(url)
     if reason then
       local options = { reason, host }
