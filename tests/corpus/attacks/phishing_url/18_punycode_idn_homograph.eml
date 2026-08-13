@@ -1,0 +1,11 @@
+From: Security Notice <sender@phishing.test>
+To: victim@example.org
+Date: Thu, 13 Aug 2026 08:00:00 +0000
+Message-ID: <msg-1871-punycode-idn@phishing.test>
+Subject: Account security notice
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+We detected unusual activity on your Apple ID. Review your account immediately:
+https://xn--80ak6aa92e.com/verify
