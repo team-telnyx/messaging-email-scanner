@@ -160,6 +160,85 @@ assert_url_flagged("https://z00m.us/", "0 maps to o in zoom")
 assert_url_clean("https://docusign.com/", "exact docusign brand has no substitution")
 assert_url_clean("https://zoom.us/", "exact zoom brand has no substitution")
 
+-- MSG-1871: RFC 3492 decoding and mixed-script IDN brand impersonation.
+-- xn--80ak6aa92e decodes to an all-Cyrillic rendering of "apple"; the ASCII
+-- .com suffix makes the complete domain mixed-script.
+local decoded_apple, decode_error = homoglyph.decode_punycode("80ak6aa92e")
+eq(decode_error, nil, "Cyrillic Apple punycode decode error")
+eq(decoded_apple, string.char(
+  0xd0, 0xb0, -- Cyrillic small a
+  0xd1, 0x80, -- Cyrillic small er
+  0xd1, 0x80, -- Cyrillic small er
+  0xd3, 0x8f, -- Cyrillic small palochka
+  0xd0, 0xb5  -- Cyrillic small ie
+), "Cyrillic Apple punycode decoding")
+
+local decoded_bucher = homoglyph.decode_punycode("bcher-kva")
+eq(decoded_bucher, "b" .. string.char(0xc3, 0xbc) .. "cher", "RFC 3492 Latin IDN decoding")
+local invalid_decoded, invalid_error = homoglyph.decode_punycode("invalid!")
+eq(invalid_decoded, nil, "invalid Punycode is rejected")
+eq(type(invalid_error), "string", "invalid Punycode returns an error")
+local truncated_decoded, truncated_error = homoglyph.decode_punycode("bcher-kv")
+eq(truncated_decoded, nil, "truncated Punycode is rejected")
+eq(type(truncated_error), "string", "truncated Punycode returns an error")
+local oversized_decoded, oversized_error = homoglyph.decode_punycode(string.rep("a", 60))
+eq(oversized_decoded, nil, "oversized DNS Punycode payload is rejected")
+eq(type(oversized_error), "string", "oversized Punycode returns an error")
+
+local idn_brand, idn_label, idn_decoded = homoglyph.detect_idn_homograph(
+  "xn--80ak6aa92e.com"
+)
+eq(idn_brand, "apple", "all-Cyrillic Apple label matches protected brand")
+eq(idn_label, "xn--80ak6aa92e", "IDN detector returns encoded source label")
+eq(idn_decoded, decoded_apple .. ".com", "IDN detector returns decoded host")
+
+local idn_matched, _, idn_options = scan({ url_host = "xn--80ak6aa92e.com" })
+eq(idn_matched, true, "all-Cyrillic Apple IDN URL")
+eq(idn_options[1], "idn_homograph", "all-Cyrillic Apple IDN reason")
+eq(idn_options[2], "source=url", "all-Cyrillic Apple IDN source")
+eq(idn_options[5], "brand=apple", "all-Cyrillic Apple IDN brand")
+
+-- xn--pple-43d is a single Cyrillic 'a' followed by Latin "pple".
+idn_matched, _, idn_options = scan({ url_host = "xn--pple-43d.com" })
+eq(idn_matched, true, "mixed Latin and Cyrillic Apple IDN URL")
+eq(idn_options[1], "idn_homograph", "mixed Latin and Cyrillic IDN reason")
+
+-- xn--pple-zld is Greek alpha followed by Latin "pple".
+idn_matched, _, idn_options = scan({ url_host = "xn--pple-zld.com" })
+eq(idn_matched, true, "mixed Latin and Greek Apple IDN URL")
+eq(idn_options[1], "idn_homograph", "mixed Latin and Greek IDN reason")
+
+-- Hyphenated phishing suffixes must not bypass the same component matching
+-- already applied to ASCII lookalikes.
+idn_matched, _, idn_options = scan({ url_host = "xn--pple-login-yqi.com" })
+eq(idn_matched, true, "hyphenated mixed-script Apple IDN URL")
+eq(idn_options[5], "brand=apple", "hyphenated mixed-script Apple brand")
+
+-- Cover reviewed confusables from the existing IDN map beyond the Apple case.
+idn_matched, _, idn_options = scan({ url_host = "xn--e1ara49ctjc.com" })
+eq(idn_matched, true, "all-Cyrillic Google IDN URL")
+eq(idn_options[5], "brand=google", "all-Cyrillic Google IDN brand")
+idn_matched, _, idn_options = scan({ url_host = "xn--ntrm-17b19yca50aha.com" })
+eq(idn_matched, true, "mixed Latin and Cyrillic Instagram IDN URL")
+eq(idn_options[5], "brand=instagram", "mixed-script Instagram IDN brand")
+
+-- Greek+Cyrillic without Latin is not the Latin+Cyrillic/Greek attack class.
+idn_matched = scan({ url_host = "xn--mxa8x6aa92e.xn--p1ai" })
+eq(idn_matched, false, "Greek and Cyrillic domain without Latin is not flagged")
+
+-- IDN encoding alone is not suspicious: the decoded label must normalize to a
+-- protected brand, and the decoded domain must actually contain mixed scripts.
+idn_matched = scan({ url_host = "xn--bcher-kva.com" })
+eq(idn_matched, false, "benign non-brand IDN")
+idn_matched, _, idn_options = scan({ from_domain = "xn--80ak6aa92e.com" })
+eq(idn_matched, true, "all-Cyrillic Apple IDN From domain")
+eq(idn_options[1], "idn_homograph", "From IDN reason")
+eq(idn_options[2], "source=from", "From IDN source")
+idn_brand = homoglyph.detect_idn_homograph("xn--80ak6aa92e.xn--p1ai")
+eq(idn_brand, nil, "single-script Cyrillic domain is not a mixed-script match")
+idn_brand = homoglyph.detect_idn_homograph("apple.com")
+eq(idn_brand, nil, "plain ASCII brand domain is not an IDN homograph")
+
 -- Cover the remaining required ASCII confusable mappings directly, including
 -- characters that a strict URL parser may reject in a real DNS hostname.
 local mapping_cases = {

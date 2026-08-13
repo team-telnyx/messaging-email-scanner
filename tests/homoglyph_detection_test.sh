@@ -111,7 +111,64 @@ if grep -Eq 'LOOKALIKE_DOMAIN' "$TMP_DIR/brand_subdomain.out"; then
   fail 'apps.apple.com should NOT trigger LOOKALIKE_DOMAIN (legitimate Apple subdomain)'
 fi
 
-# Test 4: Non-brand domain must NOT trigger
+# Test 4: Punycode IDN homograph (Cyrillic confusables rendering "apple")
+cat >"$TMP_DIR/punycode_idn.eml" <<'EOF'
+From: sender@example.org
+To: victim@example.net
+Date: Tue, 12 Aug 2026 12:00:00 +0000
+Subject: Security notice
+Message-ID: <punycode-idn@test>
+MIME-Version: 1.0
+Content-Type: text/plain
+
+Review your account at https://xn--80ak6aa92e.com/verify
+EOF
+
+scan "$TMP_DIR/punycode_idn.eml" >"$TMP_DIR/punycode_idn.out" 2>&1
+if ! grep -Eq 'LOOKALIKE_DOMAIN' "$TMP_DIR/punycode_idn.out"; then
+  sed 's/^/  /' "$TMP_DIR/punycode_idn.out" >&2
+  fail 'expected LOOKALIKE_DOMAIN for xn--80ak6aa92e.com (Cyrillic Apple IDN)'
+fi
+
+# Test 5: Mixed Latin/Greek Punycode IDN homograph
+cat >"$TMP_DIR/greek_idn.eml" <<'EOF'
+From: sender@example.org
+To: victim@example.net
+Date: Tue, 12 Aug 2026 12:00:00 +0000
+Subject: Security notice
+Message-ID: <greek-idn@test>
+MIME-Version: 1.0
+Content-Type: text/plain
+
+Review your account at https://xn--pple-zld.com/verify
+EOF
+
+scan "$TMP_DIR/greek_idn.eml" >"$TMP_DIR/greek_idn.out" 2>&1
+if ! grep -Eq 'LOOKALIKE_DOMAIN' "$TMP_DIR/greek_idn.out"; then
+  sed 's/^/  /' "$TMP_DIR/greek_idn.out" >&2
+  fail 'expected LOOKALIKE_DOMAIN for xn--pple-zld.com (Greek/Latin Apple IDN)'
+fi
+
+# Test 6: A benign non-brand IDN must NOT trigger
+cat >"$TMP_DIR/benign_idn.eml" <<'EOF'
+From: sender@example.org
+To: victim@example.net
+Date: Tue, 12 Aug 2026 12:00:00 +0000
+Subject: Book information
+Message-ID: <benign-idn@test>
+MIME-Version: 1.0
+Content-Type: text/plain
+
+Visit https://xn--bcher-kva.com/catalog for book information.
+EOF
+
+scan "$TMP_DIR/benign_idn.eml" >"$TMP_DIR/benign_idn.out" 2>&1
+if grep -Eq 'LOOKALIKE_DOMAIN' "$TMP_DIR/benign_idn.out"; then
+  sed 's/^/  /' "$TMP_DIR/benign_idn.out" >&2
+  fail 'xn--bcher-kva.com should NOT trigger LOOKALIKE_DOMAIN (benign non-brand IDN)'
+fi
+
+# Test 7: Non-brand domain must NOT trigger
 cat >"$TMP_DIR/clean.eml" <<'EOF'
 From: sender@example.org
 To: victim@example.net

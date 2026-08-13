@@ -45,6 +45,33 @@ local confusables = {
   { source = "7", replacements = { "t" } },
 }
 
+-- Common non-ASCII characters that are visually confusable with Latin letters.
+-- Keys are Unicode codepoints so this works without relying on Rspamd's optional
+-- IDN or Lua utf8 modules. Values are lower-case because hosts are case-insensitive.
+local unicode_confusables = {
+  -- Cyrillic upper case
+  [0x0410] = "a", [0x0412] = "b", [0x0421] = "c", [0x0415] = "e",
+  [0x041D] = "h", [0x0406] = "i", [0x0408] = "j", [0x041A] = "k",
+  [0x041C] = "m", [0x041E] = "o", [0x0420] = "p", [0x0405] = "s",
+  [0x0422] = "t", [0x0425] = "x", [0x04AE] = "y", [0x04C0] = "l",
+  -- Cyrillic lower case
+  [0x0430] = "a", [0x0432] = "b", [0x0441] = "c", [0x0435] = "e",
+  [0x04BB] = "h", [0x0456] = "i", [0x0458] = "j", [0x043A] = "k",
+  [0x043C] = "m", [0x043E] = "o", [0x0440] = "p", [0x0455] = "s",
+  [0x0442] = "t", [0x0445] = "x", [0x0443] = "y", [0x04CF] = "l",
+  [0x050D] = "g", -- Cyrillic small Komi sje
+  [0x0261] = "g", -- Latin small script g
+  -- Greek upper and lower case
+  [0x0391] = "a", [0x0392] = "b", [0x0395] = "e", [0x0396] = "z",
+  [0x0397] = "h", [0x0399] = "i", [0x039A] = "k", [0x039C] = "m",
+  [0x039D] = "n", [0x039F] = "o", [0x03A1] = "p", [0x03A4] = "t",
+  [0x03A5] = "y", [0x03A7] = "x",
+  [0x03B1] = "a", [0x03B2] = "b", [0x03B5] = "e", [0x03B6] = "z",
+  [0x03B7] = "h", [0x03B9] = "i", [0x03BA] = "k", [0x03BC] = "m",
+  [0x03BD] = "n", [0x03BF] = "o", [0x03C1] = "p", [0x03C4] = "t",
+  [0x03C5] = "y", [0x03C7] = "x",
+}
+
 local common_multi_label_suffixes = {
   ["co.uk"] = true,
   ["co.jp"] = true,
@@ -76,6 +103,254 @@ local function split_labels(host)
     labels[#labels + 1] = label
   end
   return labels
+end
+
+local function punycode_digit(byte)
+  if byte >= string.byte("a") and byte <= string.byte("z") then
+    return byte - string.byte("a")
+  end
+  if byte >= string.byte("A") and byte <= string.byte("Z") then
+    return byte - string.byte("A")
+  end
+  if byte >= string.byte("0") and byte <= string.byte("9") then
+    return byte - string.byte("0") + 26
+  end
+  return nil
+end
+
+local function adapt_punycode_bias(delta, points, first_time)
+  delta = math.floor(delta / (first_time and 700 or 2))
+  delta = delta + math.floor(delta / points)
+
+  local adjustment = 0
+  while delta > 455 do
+    delta = math.floor(delta / 35)
+    adjustment = adjustment + 36
+  end
+
+  return adjustment + math.floor((36 * delta) / (delta + 38))
+end
+
+local function codepoint_to_utf8(codepoint)
+  if codepoint <= 0x7f then
+    return string.char(codepoint)
+  elseif codepoint <= 0x7ff then
+    return string.char(
+      0xc0 + math.floor(codepoint / 0x40),
+      0x80 + (codepoint % 0x40)
+    )
+  elseif codepoint <= 0xffff then
+    return string.char(
+      0xe0 + math.floor(codepoint / 0x1000),
+      0x80 + (math.floor(codepoint / 0x40) % 0x40),
+      0x80 + (codepoint % 0x40)
+    )
+  end
+  return string.char(
+    0xf0 + math.floor(codepoint / 0x40000),
+    0x80 + (math.floor(codepoint / 0x1000) % 0x40),
+    0x80 + (math.floor(codepoint / 0x40) % 0x40),
+    0x80 + (codepoint % 0x40)
+  )
+end
+
+-- Decode one RFC 3492 Punycode payload (without the xn-- prefix). The returned
+-- codepoint list is used by mixed-script and confusable checks, avoiding a
+-- runtime dependency on an IDN library that is not present in every Rspamd build.
+function exports.decode_punycode(input)
+  input = tostring(input or "")
+  if input == "" then
+    return nil, "empty punycode payload"
+  end
+  -- A DNS label is limited to 63 octets including the four-byte xn-- prefix.
+  -- Bound the decoder before allocating output or entering RFC 3492 loops.
+  if #input > 59 then
+    return nil, "punycode payload exceeds DNS label limit"
+  end
+
+  local output = {}
+  local delimiter
+  for index = 1, #input do
+    if input:byte(index) == string.byte("-") then
+      delimiter = index
+    end
+  end
+
+  local input_index = 1
+  if delimiter then
+    for index = 1, delimiter - 1 do
+      local byte = input:byte(index)
+      if not byte or byte >= 0x80 then
+        return nil, "non-ASCII basic code point"
+      end
+      output[#output + 1] = byte
+    end
+    input_index = delimiter + 1
+  end
+
+  local codepoint = 128
+  local accumulator = 0
+  local bias = 72
+  while input_index <= #input do
+    local previous_accumulator = accumulator
+    local weight = 1
+    local step = 36
+
+    while true do
+      if input_index > #input then
+        return nil, "truncated punycode sequence"
+      end
+      local digit = punycode_digit(input:byte(input_index))
+      input_index = input_index + 1
+      if digit == nil then
+        return nil, "invalid punycode digit"
+      end
+
+      local max_delta = 0x10ffff * (#output + 2)
+      if weight > max_delta or digit > math.floor((max_delta - accumulator) / weight) then
+        return nil, "punycode integer overflow"
+      end
+      accumulator = accumulator + digit * weight
+      local threshold
+      if step <= bias + 1 then
+        threshold = 1
+      elseif step >= bias + 26 then
+        threshold = 26
+      else
+        threshold = step - bias
+      end
+      if digit < threshold then
+        break
+      end
+
+      local multiplier = 36 - threshold
+      if weight > math.floor(max_delta / multiplier) then
+        return nil, "punycode integer overflow"
+      end
+      weight = weight * multiplier
+      step = step + 36
+    end
+
+    local point_count = #output + 1
+    bias = adapt_punycode_bias(
+      accumulator - previous_accumulator,
+      point_count,
+      previous_accumulator == 0
+    )
+    codepoint = codepoint + math.floor(accumulator / point_count)
+    accumulator = accumulator % point_count
+    if codepoint > 0x10ffff or (codepoint >= 0xd800 and codepoint <= 0xdfff) then
+      return nil, "invalid Unicode code point"
+    end
+
+    table.insert(output, accumulator + 1, codepoint)
+    accumulator = accumulator + 1
+  end
+
+  local decoded = {}
+  for _, point in ipairs(output) do
+    decoded[#decoded + 1] = codepoint_to_utf8(point)
+  end
+  return table.concat(decoded), nil, output
+end
+
+local function unicode_script(codepoint)
+  if (codepoint >= 0x41 and codepoint <= 0x5a) or
+     (codepoint >= 0x61 and codepoint <= 0x7a) or
+     (codepoint >= 0xc0 and codepoint <= 0x24f) or
+     (codepoint >= 0x250 and codepoint <= 0x2af) or
+     (codepoint >= 0x1e00 and codepoint <= 0x1eff) then
+    return "latin"
+  end
+  if (codepoint >= 0x370 and codepoint <= 0x3ff) or
+     (codepoint >= 0x1f00 and codepoint <= 0x1fff) then
+    return "greek"
+  end
+  if (codepoint >= 0x400 and codepoint <= 0x52f) or
+     (codepoint >= 0x1c80 and codepoint <= 0x1c8f) or
+     (codepoint >= 0x2de0 and codepoint <= 0x2dff) or
+     (codepoint >= 0xa640 and codepoint <= 0xa69f) then
+    return "cyrillic"
+  end
+  return nil
+end
+
+local function confusable_skeleton(codepoints)
+  local skeleton = {}
+  for _, codepoint in ipairs(codepoints) do
+    local replacement = unicode_confusables[codepoint]
+    if replacement then
+      skeleton[#skeleton + 1] = replacement
+    elseif codepoint >= string.byte("A") and codepoint <= string.byte("Z") then
+      skeleton[#skeleton + 1] = string.char(codepoint + 32)
+    elseif codepoint < 0x80 then
+      skeleton[#skeleton + 1] = string.char(codepoint)
+    else
+      -- Preserve unmapped Unicode so it cannot disappear and create a false
+      -- protected-brand match.
+      skeleton[#skeleton + 1] = codepoint_to_utf8(codepoint)
+    end
+  end
+  return table.concat(skeleton)
+end
+
+function exports.detect_idn_homograph(host)
+  host = normalize_host(host)
+  local labels = split_labels(host)
+  local decoded_labels = {}
+  local scripts = {}
+  local candidates = {}
+  local has_punycode = false
+
+  for _, label in ipairs(labels) do
+    if label:sub(1, 4) == "xn--" then
+      has_punycode = true
+      local decoded, decode_error, codepoints = exports.decode_punycode(label:sub(5))
+      if not decoded then
+        return nil, nil, nil, decode_error
+      end
+      decoded_labels[#decoded_labels + 1] = decoded
+      candidates[#candidates + 1] = {
+        encoded = label,
+        skeleton = confusable_skeleton(codepoints),
+      }
+      for _, point in ipairs(codepoints) do
+        local script = unicode_script(point)
+        if script then scripts[script] = true end
+      end
+    else
+      decoded_labels[#decoded_labels + 1] = label
+      for index = 1, #label do
+        local script = unicode_script(label:byte(index))
+        if script then scripts[script] = true end
+      end
+    end
+  end
+
+  if not has_punycode then
+    return nil
+  end
+
+  if not scripts.latin or not (scripts.cyrillic or scripts.greek) then
+    return nil
+  end
+
+  for _, candidate in ipairs(candidates) do
+    local components = { candidate.skeleton }
+    if candidate.skeleton:find("[-_]") then
+      for component in candidate.skeleton:gmatch("[^-_]+") do
+        components[#components + 1] = component
+      end
+    end
+    for _, component in ipairs(components) do
+      for _, brand in ipairs(brands) do
+        if component == brand then
+          return brand, candidate.encoded, table.concat(decoded_labels, ".")
+        end
+      end
+    end
+  end
+  return nil
 end
 
 local function suffix_matches(host_labels, registered_labels)
@@ -308,6 +583,17 @@ local function lookalike_domain(task)
   for _, url in ipairs(task:get_urls() or {}) do
     local host = normalize_host(url:get_host())
     local registered_domain = url:get_tld()
+    local idn_brand, idn_label, decoded_host = exports.detect_idn_homograph(host)
+    if idn_brand then
+      return true, 1.0, {
+        "idn_homograph",
+        "source=url",
+        "host=" .. host,
+        "label=" .. idn_label,
+        "brand=" .. idn_brand,
+        "decoded=" .. decoded_host,
+      }
+    end
     local brand, component = exports.check_domain(host, registered_domain)
     if brand then
       return true, 1.0, {
@@ -351,6 +637,17 @@ local function lookalike_domain(task)
 
   local mime_from_domain = from_domain(task)
   if mime_from_domain then
+    local idn_brand, idn_label, decoded_host = exports.detect_idn_homograph(mime_from_domain)
+    if idn_brand then
+      return true, 1.0, {
+        "idn_homograph",
+        "source=from",
+        "host=" .. mime_from_domain,
+        "label=" .. idn_label,
+        "brand=" .. idn_brand,
+        "decoded=" .. decoded_host,
+      }
+    end
     local brand, component = exports.check_domain(mime_from_domain)
     if brand then
       return true, 1.0, {
@@ -422,7 +719,7 @@ rspamd_config:register_symbol({
   callback = lookalike_domain,
   score = 6.0,
   group = "url",
-  description = "URL or sender domain is an ASCII homoglyph/lookalike",
+  description = "URL or sender domain is a homoglyph/lookalike",
 })
 
 return exports
