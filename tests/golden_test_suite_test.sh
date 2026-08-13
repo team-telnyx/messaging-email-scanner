@@ -42,13 +42,13 @@ full_setup() {
   done
 
   # 50 legitimate fixtures
-  for i in $(seq -w 01 56); do
+  for i in $(seq -w 01 50); do
     printf 'From: sender@example.org\nTo: recipient@example.org\nSubject: Legit %s\nMessage-ID: <legit-%s@test>\nContent-Type: text/plain\n\nLegitimate %s\n' "$i" "$i" "$i" >"$TMP_DIR/corpus/legitimate/business/${i}_legit.eml"
     printf 'action: no_action\nsymbols: \ndescription: Legit %s\n' "$i" >"$TMP_DIR/corpus/legitimate/business/${i}_legit.expected"
   done
 
   # 5 fp_stress fixtures
-  for i in $(seq -w 01 56); do
+  for i in $(seq -w 01 05); do
     printf 'From: cfo@company.com\nTo: finance@company.com\nSubject: Stress %s\nMessage-ID: <stress-%s@test>\nContent-Type: text/plain\n\nStress %s\n' "$i" "$i" "$i" >"$TMP_DIR/corpus/legitimate/fp_stress/${i}_stress.eml"
     printf 'action: no_action\nsymbols: BEC_PATTERN\ndescription: Known FP risk %s\n' "$i" >"$TMP_DIR/corpus/legitimate/fp_stress/${i}_stress.expected"
   done

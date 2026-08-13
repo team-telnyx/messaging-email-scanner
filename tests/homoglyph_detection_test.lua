@@ -275,9 +275,4 @@ local function scan_html_only()
   return html_matched
 end
 
-local result = scan_html_only()
-<<<<<<< HEAD
-eq(html_urls_called, true, "MSG-1861 R2: html_link_extraction.extract_html_urls was called")
-=======
->>>>>>> 43e7c17 (Remove MSG-1861 R2 HTML mock test (incompatible with Lua 5.4 module caching))
 print("homoglyph_detection_test: PASS")
