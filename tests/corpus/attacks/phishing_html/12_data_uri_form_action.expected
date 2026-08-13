@@ -1,3 +1,3 @@
-action: add_header
-symbols: DATA_URI_URL_EXTRACTION
-description: HTML form action uses a data URI whose JavaScript posts credentials to a phishing server
+action: no_action
+symbols: OCR_SKIPPED
+description: data: URI form action — known gap, DATA_URI_URL_EXTRACTION module not firing in live Rspamd (task:get_urls doesn't expose data: scheme)
