@@ -1,0 +1,13 @@
+From: "LinkedIn" <security-noreply@linkedin-secure.example>
+To: professional@example.org
+Date: Thu, 13 Aug 2026 12:00:00 +0000
+Subject: You appeared in 7 searches this week - view who searched for you
+Message-ID: <msg-1862-open-redirect@corpus.phishing.test>
+MIME-Version: 1.0
+Content-Type: text/html; charset=utf-8
+
+<html><body>
+<p>Hi,</p>
+<p>You appeared in 7 searches this week. <a href="https://www.linkedin.com/slink?code=abc123&amp;redirect=https://linkedin-secure.example/profile-view?id=8x4k">View who searched for you</a></p>
+<p>This feature is only available to Premium members.</p>
+</body></html>
