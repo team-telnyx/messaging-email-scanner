@@ -128,6 +128,15 @@ local function parse_href(task, href)
     href = "https:" .. href
   end
 
+  -- Normalize ws:// and wss:// to http:// and https:// so rspamd_url can parse them
+  -- and downstream URL heuristics (LOOKALIKE_DOMAIN, PHISH_URL_HEURISTIC) can inspect.
+  local lower_href = href:lower()
+  if lower_href:match("^ws://") then
+    href = "http://" .. href:sub(5)
+  elseif lower_href:match("^wss://") then
+    href = "https://" .. href:sub(6)
+  end
+
   if not href:lower():match("^https?://") then
     return nil
   end

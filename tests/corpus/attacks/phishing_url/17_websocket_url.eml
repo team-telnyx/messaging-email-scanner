@@ -1,17 +1,13 @@
-From: "WebSocket Security" <security@phishing.example>
-To: employee@example.org
-Date: Thu, 13 Aug 2026 12:00:00 +0000
-Subject: Urgent WebSocket account verification
-Message-ID: <msg-1869-websocket-phish@phishing.example>
+From: "Slack Security" <security@slack-alerter.com>
+To: user@example.org
+Subject: Slack security alert: New device login detected
+Message-ID: <msg-1869-websocket-phish@phishing.com>
 MIME-Version: 1.0
-Content-Type: text/calendar; method=REQUEST; charset=utf-8
-Content-Transfer-Encoding: 8bit
+Content-Type: text/html; charset=utf-8
 
-BEGIN:VCALENDAR
-VERSION:2.0
-BEGIN:VEVENT
-UID:msg-1869-websocket-phish@phishing.example
-SUMMARY:Urgent account verification
-DESCRIPTION:Connect immediately to ws://paypal.evil.com/account/verify
-END:VEVENT
-END:VCALENDAR
+<html><body>
+<p>We detected a new device login on your Slack account.</p>
+<p>If this was not you, please verify your identity immediately:</p>
+<p><a href="ws://slack-alerter.com/verify?token=abc123">Verify your Slack account</a></p>
+<p>Your account will be suspended if not verified within 2 hours.</p>
+</body></html>

@@ -28,6 +28,9 @@ local brands = {
   "zoom",
   "ebay",
   "office365",
+  "docusign",
+  "zoom",
+  "slack",
 }
 
 local brand_set = {}
@@ -99,6 +102,9 @@ local brand_domains = {
   "google.de",
   "google.fr",
   "microsoft.co.uk",
+  "docusign.com",
+  "zoom.us",
+  "slack.com",
 }
 
 local brand_domain_set = {}
@@ -217,6 +223,9 @@ local brand_to_domains = {
   zoom = { ["zoom.us"] = true },
   ebay = { ["ebay.com"] = true, ["ebay.co.uk"] = true, ["ebay.de"] = true, ["ebay.fr"] = true, ["ebay.it"] = true, ["ebay.es"] = true, ["ebay.ca"] = true, ["ebay.com.au"] = true, ["ebay.at"] = true, ["ebay.be"] = true, ["ebay.ch"] = true, ["ebay.ie"] = true, ["ebay.nl"] = true, ["ebay.pl"] = true, ["ebay.com.sg"] = true, ["ebay.com.my"] = true, ["ebay.ph"] = true, ["ebay.com.hk"] = true, ["ebay.com.tw"] = true },
   office365 = { ["office.com"] = true, ["office365.com"] = true, ["microsoft.com"] = true },
+  docusign = { ["docusign.com"] = true },
+  zoom = { ["zoom.us"] = true, ["zoom.com"] = true },
+  slack = { ["slack.com"] = true },
 }
 
 -- Shared by header-based brand impersonation checks. Export the canonical map
