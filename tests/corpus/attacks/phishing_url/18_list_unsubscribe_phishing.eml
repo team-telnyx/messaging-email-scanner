@@ -1,0 +1,11 @@
+From: Account Notifications <notifications@updates.example.org>
+To: customer@example.net
+Date: Thu, 13 Aug 2026 14:00:00 +0000
+Subject: Your weekly account summary
+Message-ID: <msg-1868-list-unsubscribe-phish@updates.example.org>
+List-Unsubscribe: <mailto:unsubscribe@updates.example.org>, <https://paypa1.evil.com/unsubscribe?token=steal>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 7bit
+
+Your weekly account summary is ready. Manage your notification preferences using the unsubscribe option provided by your email client.
