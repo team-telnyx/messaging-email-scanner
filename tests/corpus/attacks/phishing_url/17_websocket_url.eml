@@ -1,4 +1,4 @@
-From: "Slack Security" <security@slack-alerter.com>
+From: "Slack Security" <security@s1ack-alerter.com>
 To: user@example.org
 Subject: Slack security alert: New device login detected
 Message-ID: <msg-1869-websocket-phish@phishing.com>
@@ -8,6 +8,6 @@ Content-Type: text/html; charset=utf-8
 <html><body>
 <p>We detected a new device login on your Slack account.</p>
 <p>If this was not you, please verify your identity immediately:</p>
-<p><a href="ws://slack-alerter.com/verify?token=abc123">Verify your Slack account</a></p>
+<p><a href="ws://s1ack-alerter.com/verify?token=abc123">Verify your Slack account</a></p>
 <p>Your account will be suspended if not verified within 2 hours.</p>
 </body></html>
