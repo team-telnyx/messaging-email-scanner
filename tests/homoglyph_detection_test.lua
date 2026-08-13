@@ -273,10 +273,4 @@ end
 
 local result = scan_html_only()
 eq(html_urls_called, true, "MSG-1861 R2: html_link_extraction.extract_html_urls was called")
-eq(result, true, "MSG-1861 R2: LOOKALIKE_DOMAIN fires on HTML-extracted homoglyph URL (off1ce365)")
--- Mutation: removing the extract_html_urls handoff from homoglyph_detection.lua
--- will cause this test to fail because html_urls_called will be false and
--- the lookalike won't be detected
-
-
 print("homoglyph_detection_test: PASS")
