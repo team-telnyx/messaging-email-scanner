@@ -1,0 +1,3 @@
+action: add_header
+symbols: FROM_DISPLAY_IMPERSONATION, OCR_SKIPPED
+description: PayPal display name is paired with an unrelated sender domain
