@@ -21,8 +21,9 @@ CONTROLLER_PASSWORD_HASH=$(rspamadm pw -e -p "${RSPAMD_CONTROLLER_PASSWORD}")
 CONTROLLER_ENABLE_PASSWORD_HASH=$(rspamadm pw -e -p "${RSPAMD_CONTROLLER_ENABLE_PASSWORD}")
 
 # Initial URL blocklist population (MSG-1829)
-# Downloads OpenPhish + URLhaus feeds so the blocklist is active on first scan.
-if [ -x /scripts/refresh_url_blocklist.sh ]; then
+# The same switch disables both startup population and the recurring refresh
+# loop so offline tests can run against the repository-owned empty map.
+if [ -x /scripts/refresh_url_blocklist.sh ] && [ "${URL_BLOCKLIST_REFRESH_ENABLED:-1}" = "1" ]; then
   echo "Populating URL blocklist from OpenPhish + URLhaus..."
   RSPAMD_RELOAD=0 /scripts/refresh_url_blocklist.sh || \
     echo "WARNING: initial URL blocklist refresh failed; blocklist will be empty until next scheduled refresh"
