@@ -112,7 +112,7 @@ local expected_brands = {
   "paypal", "apple", "google", "microsoft", "amazon", "netflix",
   "facebook", "instagram", "linkedin", "twitter", "bankofamerica",
   "chase", "wellsfargo", "citibank", "americanexpress", "dropbox",
-  "adobe", "ebay", "office365",
+  "adobe", "docusign", "zoom", "ebay", "office365",
 }
 for _, brand in ipairs(expected_brands) do
   eq(heuristics.brand_set[brand], true, "brand list contains " .. brand)
@@ -151,6 +151,12 @@ assert_clean("https://sellercentral.amazon.co.uk/")
 assert_clean("https://ebay.com.sg/")
 assert_clean("https://ebay.com.my/")
 assert_clean("https://www.dropbox.com/")
+assert_clean("https://www.docusign.com/")
+assert_clean("https://www.zoom.us/")
+assert_flagged("https://docusign.login-secure-portal.com/", "subdomain_impersonation")
+assert_flagged("https://zoom.login-secure-portal.com/", "subdomain_impersonation")
+assert_flagged("https://evil.com/docusign/login", "brand_in_path")
+assert_flagged("https://evil.com/zoom/login", "brand_in_path")
 -- Alias domain negatives: citi.com is legitimate for citibank, x.com for twitter
 assert_clean("https://citi.com/citibank")
 assert_clean("https://x.com/twitter")

@@ -21,8 +21,10 @@ local brands = {
   "wellsfargo",
   "citibank",
   "americanexpress",
+  "docusign",
   "dropbox",
   "adobe",
+  "zoom",
   "ebay",
   "office365",
 }

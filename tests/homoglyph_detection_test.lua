@@ -14,7 +14,7 @@ _G.rspamd_config = {
   end,
 }
 
-require "homoglyph_detection"
+local homoglyph = require "homoglyph_detection"
 
 local function eq(actual, expected, label)
   if actual ~= expected then
@@ -130,6 +130,17 @@ eq(registered_symbol.type, "prefilter", "registered symbol type")
 eq(registered_symbol.score, 6.0, "registered symbol score")
 eq(next(dependencies), nil, "registered dependencies")
 
+local expected_brands = {
+  "docusign", "dropbox", "adobe", "zoom",
+}
+local brand_set = {}
+for _, brand in ipairs(homoglyph.brands) do
+  brand_set[brand] = true
+end
+for _, brand in ipairs(expected_brands) do
+  eq(brand_set[brand], true, "brand list contains " .. brand)
+end
+
 assert_url_flagged("https://micros0ft-share.com/login", "0 maps to o in microsoft")
 assert_url_flagged("https://paypa1-verify.com/login", "1 maps to l in paypal")
 assert_url_flagged("https://g00gle-search.com/", "multiple 0 characters map to o")
@@ -142,6 +153,12 @@ assert_url_clean("https://example.com/", "non-brand domain")
 assert_url_flagged("https://rnicrosoft.com/", "rn maps to m")
 assert_url_clean("https://paypal.com/", "exact paypal brand has no substitution")
 assert_url_flagged("https://paypa1.com/", "paypal lookalike registered domain")
+assert_url_flagged("https://d0cusign.com/", "0 maps to o in docusign")
+assert_url_flagged("https://dr0pbox.com/", "0 maps to o in dropbox")
+assert_url_flagged("https://ad0be.com/", "0 maps to o in adobe")
+assert_url_flagged("https://z00m.us/", "0 maps to o in zoom")
+assert_url_clean("https://docusign.com/", "exact docusign brand has no substitution")
+assert_url_clean("https://zoom.us/", "exact zoom brand has no substitution")
 
 -- Cover the remaining required ASCII confusable mappings directly, including
 -- characters that a strict URL parser may reject in a real DNS hostname.
