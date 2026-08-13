@@ -1,0 +1,3 @@
+action: add_header
+symbols: LOOKALIKE_DOMAIN, OCR_SKIPPED, PHISH_URL_HEURISTIC, SVG_URL_EXTRACTION
+description: Base64 SVG foreignObject hides a phishing URL from normal HTML extraction

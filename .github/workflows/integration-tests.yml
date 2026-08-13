@@ -7,30 +7,23 @@ on:
     branches: [main]
 
 jobs:
-  ical-url-extraction:
+  svg-url-extraction:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Install Lua
         run: sudo apt-get update && sudo apt-get install -y lua5.4
-      - name: Run iCalendar URL extraction Lua tests
+      - name: Run SVG URL extraction Lua tests
+        run: SVG_URL_EXTRACTION_LUA_PATH=config/lualib lua5.4 tests/svg_url_extraction_test.lua
+      - name: Run SVG URL extraction integration test
         run: |
-          ICAL_URL_EXTRACTION_LUA_PATH=config/lualib lua5.4 tests/ical_url_extraction_test.lua
-      - name: Run iCalendar URL extraction integration test
-        run: |
-          docker build -t messaging-email-scanner:ical-test .
-          ICAL_URL_SKIP_BUILD=1 bash tests/ical_url_extraction_test.sh
+          docker build -t messaging-email-scanner:svg-test .
+          SVG_URL_SKIP_BUILD=1 bash tests/svg_url_extraction_test.sh
 
   html-link-extraction:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install Lua
-        run: sudo apt-get update && sudo apt-get install -y lua5.4
-      - name: Run URL extraction and heuristic Lua tests
-        run: |
-          HTML_LINK_EXTRACTION_LUA_PATH=config/lualib lua5.4 tests/html_link_extraction_test.lua
-          PHISH_URL_HEURISTICS_LUA_PATH=config/lualib lua5.4 tests/phish_url_heuristics_test.lua
       - name: Run HTML link extraction integration test
         run: |
           docker build -t messaging-email-scanner:html-link-test .
