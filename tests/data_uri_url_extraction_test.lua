@@ -1,3 +1,4 @@
+package.loaded["rspamd_logger"] = { infox = function() end, warnx = function() end, errx = function() end }
 local module_dir = os.getenv("DATA_URI_URL_EXTRACTION_LUA_PATH") or "config/lualib"
 package.path = module_dir .. "/?.lua;" .. package.path
 

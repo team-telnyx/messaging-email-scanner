@@ -3,7 +3,8 @@
 
 local rspamd_url = require "rspamd_url"
 local rspamd_util = require "rspamd_util"
-local rspamd_logger = require "rspamd_logger"
+-- rspamd_logger is available in live Rspamd but not in unit tests
+local rspamd_logger = package.loaded["rspamd_logger"]
 
 local exports = {}
 local SYMBOL = "DATA_URI_URL_EXTRACTION"
