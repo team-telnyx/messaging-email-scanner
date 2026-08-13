@@ -7,6 +7,20 @@ on:
     branches: [main]
 
 jobs:
+  ical-url-extraction:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Lua
+        run: sudo apt-get update && sudo apt-get install -y lua5.4
+      - name: Run iCalendar URL extraction Lua tests
+        run: |
+          ICAL_URL_EXTRACTION_LUA_PATH=config/lualib lua5.4 tests/ical_url_extraction_test.lua
+      - name: Run iCalendar URL extraction integration test
+        run: |
+          docker build -t messaging-email-scanner:ical-test .
+          ICAL_URL_SKIP_BUILD=1 bash tests/ical_url_extraction_test.sh
+
   html-link-extraction:
     runs-on: ubuntu-latest
     steps:

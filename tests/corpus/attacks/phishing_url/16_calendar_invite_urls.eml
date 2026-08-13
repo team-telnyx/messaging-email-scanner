@@ -1,0 +1,18 @@
+From: "HR Department" <hr@phishing.test>
+To: employee@example.org
+Date: Thu, 13 Aug 2026 12:00:00 +0000
+Subject: Benefits Enrollment Review
+Message-ID: <msg-1860-calendar-phish@phishing.test>
+MIME-Version: 1.0
+Content-Type: text/calendar; method=REQUEST; charset=utf-8
+Content-Transfer-Encoding: base64
+
+QkVHSU46VkNBTEVOREFSDQpWRVJTSU9OOjIuMA0KUFJPRElEOi0vL1RlbG55eC8vTVNHLTE4NjAg
+VGVzdC8vRU4NCkJFR0lOOlZFVkVOVA0KVUlEOm1zZy0xODYwLWNhbGVuZGFyLXBoaXNoQHBoaXNo
+aW5nLnRlc3QNCkRUU1RBTVA6MjAyNjA4MTNUMTIwMDAwWg0KRFRTVEFSVDoyMDI2MDgxNFQxNTAw
+MDBaDQpTVU1NQVJZOkVtcGxveWVlIEJlbmVmaXRzIEVucm9sbG1lbnQgUmV2aWV3DQpERVNDUklQ
+VElPTjpQbGVhc2UgY29uZmlybSB5b3VyIGVtcGxveWVlIGJlbmVmaXRzIGVucm9sbG1lbnQgYXQg
+DQogaHR0cHM6Ly9wYXlwYWwuZXZpbC5leGFtcGxlL2Vucm9sbC92ZXJpZnkNClVSTDpodHRwczov
+L21pY3JvczBmdC5waGlzaGluZy50ZXN0L2Vucm9sbC92ZXJpZnkNCkFUVEFDSDtGTVRUWVBFPWFw
+cGxpY2F0aW9uL3BkZjpodHRwczovL2V2aWwuZXhhbXBsZS9wYXlwYWwvZm9ybXMucGRmDQpFTkQ6
+VkVWRU5UDQpFTkQ6VkNBTEVOREFSDQo=
