@@ -219,6 +219,10 @@ local brand_to_domains = {
   office365 = { ["office.com"] = true, ["office365.com"] = true, ["microsoft.com"] = true },
 }
 
+-- Shared by header-based brand impersonation checks. Export the canonical map
+-- so detectors do not maintain divergent copies of legitimate brand domains.
+exports.brand_to_domains = brand_to_domains
+
 local function brand_in_path(host, path, url, labels)
   path = string.lower(path or "")
   if path == "" then
