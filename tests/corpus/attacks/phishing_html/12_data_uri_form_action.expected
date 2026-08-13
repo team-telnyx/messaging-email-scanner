@@ -1,0 +1,2 @@
+action: add_header
+description: data: URI form action — DATA_URI_URL_EXTRACTION not firing in live Rspamd (known gap), caught by built-in heuristics
