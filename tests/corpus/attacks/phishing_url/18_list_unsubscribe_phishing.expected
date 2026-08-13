@@ -1,0 +1,3 @@
+action: add_header
+symbols: HEADER_URL_EXTRACTION, LOOKALIKE_DOMAIN
+description: List-Unsubscribe MIME header hides a PayPal lookalike phishing URL outside the message body
