@@ -79,7 +79,17 @@ local function decode_property_value(name_and_params, value)
   return value
 end
 
+-- Extract HTTP(S) URLs from text using string matching (fallback for reserved TLDs)
+local function extract_urls_from_text(text)
+  local urls = {}
+  for url in tostring(text or ""):gmatch("https?://[%w%.%-%_%%:/?=&~#+]+") do
+    urls[#urls + 1] = url
+  end
+  return urls
+end
+
 local function append_urls(value, mempool, urls, seen)
+  -- First try rspamd_url.all (works for real TLDs)
   local parsed_urls = rspamd_url.all(mempool, tostring(value or "")) or {}
   for _, url in ipairs(parsed_urls) do
     local normalized = tostring(url)
@@ -88,6 +98,33 @@ local function append_urls(value, mempool, urls, seen)
       urls[#urls + 1] = url
       if #urls >= MAX_URLS then
         return true
+      end
+    end
+  end
+
+  -- Fallback: string-based extraction for reserved TLDs (.example, .test)
+  -- that rspamd_url.all() doesn't recognize
+  if #parsed_urls == 0 then
+    for _, url_str in ipairs(extract_urls_from_text(value)) do
+      if not seen[url_str] then
+        seen[url_str] = true
+        -- Create URL object if possible, otherwise use the string
+        local url_obj = rspamd_url.create(mempool, url_str)
+        if url_obj then
+          urls[#urls + 1] = url_obj
+        else
+          -- For reserved TLDs, create a fake URL-like table
+          urls[#urls + 1] = {
+            _url = url_str,
+            get_host = function() return url_str:match("^%a+://([^/:]+)") or "" end,
+            get_tld = function() return url_str:match("(%.[^.]+)$") or "" end,
+            get_query = function() return url_str:match("%?(.*)") or "" end,
+            get_path = function() return url_str:match("://[^/]+(/[^?]*)") or "/" end,
+          }
+        end
+        if #urls >= MAX_URLS then
+          return true
+        end
       end
     end
   end

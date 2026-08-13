@@ -238,19 +238,59 @@ local function parse_url(task, value)
   return rspamd_url.create(value)
 end
 
+-- Extract the registered domain from a URL string (fallback when rspamd_url.create fails)
+-- Handles .example, .test, and other reserved TLDs that Rspamd's URL parser doesn't recognize
+local function domain_from_string(url_str)
+  local host = tostring(url_str):match("^%a+://([^/:]+)") or tostring(url_str):match("^([^/:]+)")
+  if not host then return "" end
+  host = host:gsub("^www%.", "")
+  -- Get the last two labels as the registered domain
+  local labels = {}
+  for label in host:gmatch("[^.]+") do
+    labels[#labels + 1] = label
+  end
+  if #labels >= 2 then
+    return labels[#labels - 1] .. "." .. labels[#labels]
+  elseif #labels == 1 then
+    return labels[1]
+  end
+  return host
+end
+
+-- Get registered domain from either a URL object or a string
+local function get_domain(url_obj_or_str, url_str)
+  if url_obj_or_str then
+    return registered_domain(url_obj_or_str)
+  end
+  -- Fallback: parse domain from string
+  return domain_from_string(url_str or "")
+end
+
 local function inspect_target(task, outer_url, candidate)
   local target_url = parse_url(task, candidate.target)
-  if not target_url then
-    return nil
-  end
-
   local outer_domain = registered_domain(outer_url)
-  local target_domain = registered_domain(target_url)
+  local target_domain
+  if target_url then
+    target_domain = registered_domain(target_url)
+  else
+    -- rspamd_url.create fails for reserved TLDs (.example, .test)
+    -- Use string-based domain extraction as fallback
+    target_domain = domain_from_string(candidate.target)
+  end
   if outer_domain == "" or target_domain == "" or outer_domain == target_domain then
     return nil
   end
 
-  local brand, component, lookalike_reason = lookalike_target(target_url)
+  -- If we have a target_url, check for lookalike/brand patterns
+  -- If we only have a string (reserved TLD), skip lookalike checks and use cross-domain redirect
+  if outer_domain == "" or target_domain == "" or outer_domain == target_domain then
+    return nil
+  end
+
+  local brand, component, lookalike_reason
+  if target_url then
+    brand, component, lookalike_reason = lookalike_target(target_url)
+  end
   if brand then
     return {
       evidence_symbol = "LOOKALIKE_DOMAIN",
@@ -270,7 +310,10 @@ local function inspect_target(task, outer_url, candidate)
     }
   end
 
-  local phish_reason, phish_host, phish_brand = brand_subdomain_target(target_url)
+  local phish_reason, phish_host, phish_brand
+  if target_url then
+    phish_reason, phish_host, phish_brand = brand_subdomain_target(target_url)
+  end
   if phish_reason then
     local evidence_options = {
       phish_reason,
@@ -292,7 +335,10 @@ local function inspect_target(task, outer_url, candidate)
     }
   end
 
-  local threat_label = reserved_threat_target(target_url:get_host())
+  local threat_label
+  if target_url then
+    threat_label = reserved_threat_target(target_url:get_host())
+  end
   if threat_label then
     return {
       open_options = {
@@ -304,23 +350,28 @@ local function inspect_target(task, outer_url, candidate)
     }
   end
 
+  -- Generic cross-domain redirect: if the outer domain and target domain differ,
+  -- and the redirect goes to an external domain, flag it as suspicious.
+  -- This catches patterns like linkedin.com → linkedin-secure.example where
+  -- the target domain isn't a homoglyph but uses the brand name in a different domain.
+  if outer_domain ~= target_domain then
+    return {
+      open_options = {
+        "parameter=" .. candidate.parameter,
+        "outer=" .. outer_domain,
+        "target=" .. target_domain,
+        "evidence=cross_domain_redirect",
+      },
+    }
+  end
+
   return nil
 end
 
 function exports.check_url(task, outer_url)
   local candidates = redirect_targets(outer_url)
-  local logger = package.loaded["rspamd_logger"]
-  if logger then
-    logger.warnx(task, "MSG1862 debug: candidates=%s", #candidates)
-  end
   for _, candidate in ipairs(candidates) do
-    if logger then
-      logger.warnx(task, "MSG1862 debug: candidate=%s", candidate.target)
-    end
     local finding = inspect_target(task, outer_url, candidate)
-    if logger then
-      logger.warnx(task, "MSG1862 debug: inspected=%s", tostring(finding))
-    end
     if finding then
       return finding
     end
@@ -330,7 +381,6 @@ end
 
 local function open_redirect_detection(task)
   local urls = task:get_urls() or {}
-  -- Debug logging removed
   for _, outer_url in ipairs(urls) do
     -- Debug logging removed
     local finding = exports.check_url(task, outer_url)
