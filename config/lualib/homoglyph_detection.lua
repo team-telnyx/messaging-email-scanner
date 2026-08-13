@@ -27,6 +27,9 @@ local brands = {
   "zoom",
   "ebay",
   "office365",
+  "docusign",
+  "zoom",
+  "slack",
 }
 
 local confusables = {

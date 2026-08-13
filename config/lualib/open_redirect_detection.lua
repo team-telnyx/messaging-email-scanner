@@ -139,7 +139,8 @@ local function has_redirect_path(url)
   if url.get_path then
     path = tostring(url:get_path() or "")
   else
-    path = url_text(url):match("^https?://[^/%?#]+([^?#]*)") or ""
+    path = url_text(url):match("^https?://[^/%?#]+([^?#]*)") or
+        url_text(url):match("^wss?://[^/%?#]+([^?#]*)") or ""
   end
   path = string.lower(path):gsub("/+$", "")
   local final_segment = path:match("/([^/]+)$")
@@ -157,7 +158,8 @@ local function redirect_targets(url)
       local name = string.lower(fully_decode(raw_name))
       if redirect_parameters[name] or path_is_redirect then
         local target = fully_decode(raw_value)
-        if target:lower():match("^https?://") then
+        local lower_target = target:lower()
+        if lower_target:match("^https?://") or lower_target:match("^wss?://") then
           targets[#targets + 1] = {
             parameter = name,
             target = target,
@@ -232,10 +234,28 @@ end
 
 local function parse_url(task, value)
   local pool = task.get_mempool and task:get_mempool() or nil
+  local url
   if pool then
-    return rspamd_url.create(pool, value)
+    url = rspamd_url.create(pool, value)
+  else
+    url = rspamd_url.create(value)
   end
-  return rspamd_url.create(value)
+  if url then
+    return url
+  end
+
+  -- Rspamd 3.10 cannot create URL objects for WebSocket schemes. Parse the
+  -- equivalent HTTP transport so lookalike and phishing checks still run.
+  local scheme, remainder = tostring(value):match("^([Ww][Ss][Ss]?)://(.*)$")
+  if not scheme then
+    return nil
+  end
+  local compatible_value = (scheme:lower() == "wss" and "https" or "http") ..
+      "://" .. remainder
+  if pool then
+    return rspamd_url.create(pool, compatible_value)
+  end
+  return rspamd_url.create(compatible_value)
 end
 
 -- Extract the registered domain from a URL string (fallback when rspamd_url.create fails)

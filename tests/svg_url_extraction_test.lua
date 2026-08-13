@@ -168,6 +168,18 @@ assert_extracted(
   "anchor href"
 )
 
+assert_extracted(
+  '<svg><foreignObject data="ws://paypal.security.evil.example/socket"></foreignObject></svg>',
+  "http://paypal.security.evil.example/socket",
+  "WebSocket foreignObject data"
+)
+
+assert_extracted(
+  '<svg><a href="wss://micros0ft.evil.example/session"><text>Connect</text></a></svg>',
+  "https://micros0ft.evil.example/session",
+  "secure WebSocket anchor href"
+)
+
 local no_url = scan({ mime_part("image/svg+xml", '<svg><use href="#local-icon"/></svg>') })
 eq(no_url.matched, false, "SVG with no network URLs")
 eq(#no_url.injected, 0, "SVG with no network URLs injected count")

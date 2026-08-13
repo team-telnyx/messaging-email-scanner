@@ -176,6 +176,14 @@ assert_open_redirect(
   "https://legitimate.example/go?dest=https://evil.example/collect",
   "external evil.example destination"
 )
+assert_open_redirect(
+  "https://legitimate.example/redirect?redirect=ws://phishing.example/socket",
+  "external WebSocket redirect target"
+)
+assert_open_redirect(
+  "https://legitimate.example/redirect?redirect=wss://phishing.example/session",
+  "external secure WebSocket redirect target"
+)
 
 -- The motivating red-team URL: a legitimate LinkedIn URL redirects to a
 -- brand-modifier lookalike domain.

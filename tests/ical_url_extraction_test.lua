@@ -76,6 +76,12 @@ package.preload["rspamd_url"] = function()
       end
       return urls
     end,
+    create = function(_, value)
+      if tostring(value or ""):lower():match("^https?://") then
+        return url_object(value)
+      end
+      return nil
+    end,
   }
 end
 
@@ -201,6 +207,24 @@ local lower_calendar = table.concat({
 result = scan({ mime_part("APPLICATION", "CALENDAR", lower_calendar, lower_calendar, "8bit") })
 eq(result.matched, true, "application/calendar match")
 eq(#result.injected, 1, "case-insensitive property extraction")
+
+-- WebSocket URLs are web URLs even when the native parser does not include
+-- them in rspamd_url.all(). The string fallback must recognize both schemes.
+local websocket_calendar = table.concat({
+  "BEGIN:VCALENDAR",
+  "BEGIN:VEVENT",
+  "URL:ws://paypal.evil.example/socket",
+  "DESCRIPTION:Review https://support.example.org/help then connect to wss://micros0ft.phishing.test/session",
+  "END:VEVENT",
+  "END:VCALENDAR",
+}, "\n")
+result = scan({ mime_part("text", "calendar", websocket_calendar, websocket_calendar, "8bit") })
+values = injected_set(result)
+eq(result.matched, true, "WebSocket calendar match")
+eq(#result.injected, 3, "mixed web URL count")
+eq(values["http://paypal.evil.example/socket"], 1, "ws URL extraction")
+eq(values["https://support.example.org/help"], 1, "HTTP URL extraction alongside wss")
+eq(values["https://micros0ft.phishing.test/session"], 1, "wss URL extraction")
 
 -- Non-calendar parts and calendar events without URL-bearing properties are ignored.
 result = scan({
