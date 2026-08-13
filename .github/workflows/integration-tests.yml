@@ -55,3 +55,17 @@ jobs:
         run: docker build -t messaging-email-scanner:golden-test .
       - name: Run golden test suite
         run: GOLDEN_SKIP_BUILD=1 bash tests/golden_test_suite.sh
+
+  open-redirect-detection:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Lua
+        run: sudo apt-get update && sudo apt-get install -y lua5.4
+      - name: Run open redirect detection Lua tests
+        run: |
+          OPEN_REDIRECT_DETECTION_LUA_PATH=config/lualib lua5.4 tests/open_redirect_detection_test.lua
+      - name: Run open redirect detection integration test
+        run: |
+          docker build -t messaging-email-scanner:open-redirect-test .
+          OPEN_REDIRECT_TEST_IMAGE=messaging-email-scanner:open-redirect-test bash tests/open_redirect_detection_test.sh
