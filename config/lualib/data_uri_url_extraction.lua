@@ -227,7 +227,7 @@ local function data_uri_url_extraction(task)
   local extracted = 0
   local seen = {}
 
-  rspamd_logger.infox(task, "DATAURI callback start urls=%s text_parts=%s", #(task:get_urls() or {}), #(task:get_text_parts() or {}))
+
 
   for _, url in ipairs(task:get_urls() or {}) do
     seen[tostring(url)] = true
