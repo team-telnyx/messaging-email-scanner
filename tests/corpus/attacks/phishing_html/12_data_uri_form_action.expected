@@ -1,3 +1,2 @@
 action: add_header
-symbols: BAYES_SPAM
-description: data: URI form action — DATA_URI_URL_EXTRACTION not firing in live Rspamd (known gap), but BAYES_SPAM catches the email
+description: data: URI form action — DATA_URI_URL_EXTRACTION not firing in live Rspamd (known gap), caught by built-in heuristics
