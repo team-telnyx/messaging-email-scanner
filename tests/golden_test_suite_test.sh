@@ -35,20 +35,20 @@ full_setup() {
   local fake_dir="$TMP_DIR/fake_bin"
   mkdir -p "$fake_dir" "$TMP_DIR/corpus/attacks/phishing" "$TMP_DIR/corpus/legitimate/business" "$TMP_DIR/corpus/legitimate/fp_stress"
 
-  # 55 attack fixtures
-  for i in $(seq -w 01 55); do
+  # 56 attack fixtures
+  for i in $(seq -w 01 56); do
     printf 'From: attacker@evil.example\nTo: victim@example.org\nSubject: Attack %s\nMessage-ID: <attack-%s@test>\nContent-Type: text/plain\n\nAttack email %s\n' "$i" "$i" "$i" >"$TMP_DIR/corpus/attacks/phishing/${i}_attack.eml"
     printf 'action: add_header\nsymbols: BAYES_SPAM, BEC_PATTERN, LOOKALIKE_DOMAIN\ndescription: Attack %s\n' "$i" >"$TMP_DIR/corpus/attacks/phishing/${i}_attack.expected"
   done
 
   # 50 legitimate fixtures
-  for i in $(seq -w 01 50); do
+  for i in $(seq -w 01 56); do
     printf 'From: sender@example.org\nTo: recipient@example.org\nSubject: Legit %s\nMessage-ID: <legit-%s@test>\nContent-Type: text/plain\n\nLegitimate %s\n' "$i" "$i" "$i" >"$TMP_DIR/corpus/legitimate/business/${i}_legit.eml"
     printf 'action: no_action\nsymbols: \ndescription: Legit %s\n' "$i" >"$TMP_DIR/corpus/legitimate/business/${i}_legit.expected"
   done
 
   # 5 fp_stress fixtures
-  for i in $(seq -w 01 05); do
+  for i in $(seq -w 01 56); do
     printf 'From: cfo@company.com\nTo: finance@company.com\nSubject: Stress %s\nMessage-ID: <stress-%s@test>\nContent-Type: text/plain\n\nStress %s\n' "$i" "$i" "$i" >"$TMP_DIR/corpus/legitimate/fp_stress/${i}_stress.eml"
     printf 'action: no_action\nsymbols: BEC_PATTERN\ndescription: Known FP risk %s\n' "$i" >"$TMP_DIR/corpus/legitimate/fp_stress/${i}_stress.expected"
   done
@@ -224,7 +224,7 @@ assert "runner exits non-zero with orphan .expected" \
 assert "output mentions orphan" \
   "grep -qi 'orphan' '$TMP_DIR/output.txt'"
 
-# Test 5: Paired deletion of attack fixture (authoritative count 54 != 55)
+# Test 5: Paired deletion of attack fixture (authoritative count 55 != 56)
 printf '\nTest 5: Paired deletion of attack fixture\n'
 full_setup
 rm "$TMP_DIR/corpus/attacks/phishing/01_attack.eml" "$TMP_DIR/corpus/attacks/phishing/01_attack.expected"
@@ -267,7 +267,7 @@ assert "output mentions canary failure specifically" \
 assert "runner did not reach corpus scanning" \
   "! grep -q 'Scanning golden corpus' '$TMP_DIR/output.txt'"
 
-# Test 9: Paired deletion of legitimate fixture (authoritative count 54 != 55)
+# Test 9: Paired deletion of legitimate fixture (authoritative count 55 != 56)
 printf '\nTest 9: Paired deletion of legitimate fixture\n'
 full_setup
 rm "$TMP_DIR/corpus/legitimate/business/01_legit.eml" "$TMP_DIR/corpus/legitimate/business/01_legit.expected"
