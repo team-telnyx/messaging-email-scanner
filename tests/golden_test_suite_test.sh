@@ -35,7 +35,7 @@ full_setup() {
   local fake_dir="$TMP_DIR/fake_bin"
   mkdir -p "$fake_dir" "$TMP_DIR/corpus/attacks/phishing" "$TMP_DIR/corpus/legitimate/business" "$TMP_DIR/corpus/legitimate/fp_stress"
 
-  # 57 attack fixtures
+  # 58 attack fixtures
   for i in $(seq -w 01 57); do
     printf 'From: attacker@evil.example\nTo: victim@example.org\nSubject: Attack %s\nMessage-ID: <attack-%s@test>\nContent-Type: text/plain\n\nAttack email %s\n' "$i" "$i" "$i" >"$TMP_DIR/corpus/attacks/phishing/${i}_attack.eml"
     printf 'action: add_header\nsymbols: BAYES_SPAM, BEC_PATTERN, LOOKALIKE_DOMAIN\ndescription: Attack %s\n' "$i" >"$TMP_DIR/corpus/attacks/phishing/${i}_attack.expected"
