@@ -1,0 +1,3 @@
+action: add_header
+symbols: ICAL_URL_EXTRACTION, PHISH_URL_HEURISTIC
+description: iCalendar invite hides a ws:// phishing URL in its DESCRIPTION field

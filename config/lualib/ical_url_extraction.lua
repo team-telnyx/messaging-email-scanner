@@ -79,13 +79,34 @@ local function decode_property_value(name_and_params, value)
   return value
 end
 
--- Extract HTTP(S) URLs from text using string matching (fallback for reserved TLDs)
+-- Extract web URLs from text when Rspamd's native parser does not recognize
+-- the scheme or TLD.
 local function extract_urls_from_text(text)
   local urls = {}
-  for url in tostring(text or ""):gmatch("https?://[%w%.%-%_%%:/?=&~#+]+") do
-    urls[#urls + 1] = url
+  for url in tostring(text or ""):gmatch("[%a][%w+%.%-]*://[%w%.%-%_%%:/?=&~#+]+") do
+    local scheme = url:match("^([^:]+)")
+    scheme = scheme and scheme:lower() or ""
+    if scheme == "http" or scheme == "https" or scheme == "ws" or scheme == "wss" then
+      urls[#urls + 1] = url
+    end
   end
   return urls
+end
+
+local function create_web_url(mempool, value)
+  local url = rspamd_url.create(mempool, value)
+  if url then
+    return url
+  end
+
+  -- Rspamd 3.10 cannot create URL objects for WebSocket schemes. Map them to
+  -- their equivalent HTTP transports before injection into task:get_urls().
+  local scheme, remainder = tostring(value):match("^([Ww][Ss][Ss]?)://(.*)$")
+  if scheme then
+    local compatible_scheme = scheme:lower() == "wss" and "https" or "http"
+    return rspamd_url.create(mempool, compatible_scheme .. "://" .. remainder)
+  end
+  return nil
 end
 
 local function append_urls(value, mempool, urls, seen)
@@ -103,28 +124,32 @@ local function append_urls(value, mempool, urls, seen)
   end
 
   -- Fallback: string-based extraction for reserved TLDs (.example, .test)
-  -- that rspamd_url.all() doesn't recognize
-  if #parsed_urls == 0 then
-    for _, url_str in ipairs(extract_urls_from_text(value)) do
-      if not seen[url_str] then
-        seen[url_str] = true
-        -- Create URL object if possible, otherwise use the string
-        local url_obj = rspamd_url.create(mempool, url_str)
-        if url_obj then
+  -- and WebSocket schemes that rspamd_url.all() does not recognize. Always run
+  -- it because one property can contain both a native HTTP URL and a ws(s) URL.
+  for _, url_str in ipairs(extract_urls_from_text(value)) do
+    if not seen[url_str] then
+      -- Create URL object if possible, otherwise use the string
+      local url_obj = create_web_url(mempool, url_str)
+      if url_obj then
+        local normalized = tostring(url_obj)
+        if normalized ~= "" and not seen[normalized] then
+          seen[url_str] = true
+          seen[normalized] = true
           urls[#urls + 1] = url_obj
-        else
-          -- For reserved TLDs, create a fake URL-like table
-          urls[#urls + 1] = {
-            _url = url_str,
-            get_host = function() return url_str:match("^%a+://([^/:]+)") or "" end,
-            get_tld = function() return url_str:match("(%.[^.]+)$") or "" end,
-            get_query = function() return url_str:match("%?(.*)") or "" end,
-            get_path = function() return url_str:match("://[^/]+(/[^?]*)") or "/" end,
-          }
         end
-        if #urls >= MAX_URLS then
-          return true
-        end
+      else
+        -- For reserved TLDs, create a fake URL-like table
+        seen[url_str] = true
+        urls[#urls + 1] = {
+          _url = url_str,
+          get_host = function() return url_str:match("^%a+://([^/:]+)") or "" end,
+          get_tld = function() return url_str:match("(%.[^.]+)$") or "" end,
+          get_query = function() return url_str:match("%?(.*)") or "" end,
+          get_path = function() return url_str:match("://[^/]+(/[^?]*)") or "/" end,
+        }
+      end
+      if #urls >= MAX_URLS then
+        return true
       end
     end
   end

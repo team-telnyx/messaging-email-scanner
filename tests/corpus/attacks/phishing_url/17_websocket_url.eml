@@ -1,0 +1,17 @@
+From: "WebSocket Security" <security@phishing.example>
+To: employee@example.org
+Date: Thu, 13 Aug 2026 12:00:00 +0000
+Subject: Urgent WebSocket account verification
+Message-ID: <msg-1869-websocket-phish@phishing.example>
+MIME-Version: 1.0
+Content-Type: text/calendar; method=REQUEST; charset=utf-8
+Content-Transfer-Encoding: 8bit
+
+BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:msg-1869-websocket-phish@phishing.example
+SUMMARY:Urgent account verification
+DESCRIPTION:Connect immediately to ws://paypal.evil.com/account/verify
+END:VEVENT
+END:VCALENDAR

@@ -1,4 +1,4 @@
--- MSG-1859: expose HTTP(S) URLs embedded in SVG MIME parts to Rspamd's
+-- MSG-1859: expose web URLs embedded in SVG MIME parts to Rspamd's
 -- existing URL phishing and lookalike-domain rules.
 
 local rspamd_url = require "rspamd_url"
@@ -81,8 +81,26 @@ local function is_network_url(value)
   if value:match("^//") then
     return "https:" .. value
   end
-  if value:lower():match("^https?://") then
+  local lower_value = value:lower()
+  if lower_value:match("^https?://") or lower_value:match("^wss?://") then
     return value
+  end
+  return nil
+end
+
+local function create_web_url(mempool, value)
+  local url = rspamd_url.create(mempool, value)
+  if url then
+    return url
+  end
+
+  -- Rspamd 3.10 cannot create URL objects for WebSocket schemes. Map them to
+  -- their equivalent HTTP transports so existing host/path phishing rules can
+  -- inspect the URL after it is injected into task:get_urls().
+  local scheme, remainder = tostring(value):match("^([Ww][Ss][Ss]?)://(.*)$")
+  if scheme then
+    local compatible_scheme = scheme:lower() == "wss" and "https" or "http"
+    return rspamd_url.create(mempool, compatible_scheme .. "://" .. remainder)
   end
   return nil
 end
@@ -172,7 +190,7 @@ local function svg_url_extraction(task)
           -- Do not mark the URL as `content`: task:get_urls() excludes content
           -- URLs by default, and the existing repository heuristics consume that
           -- default list. inject_url() still associates it with the MIME part.
-          local url = rspamd_url.create(task:get_mempool(), value)
+          local url = create_web_url(task:get_mempool(), value)
           if url then
             seen[value] = true
             task:inject_url(url, part)
@@ -200,7 +218,7 @@ rspamd_config:register_symbol({
   priority = 9,
   score = 0.0,
   group = "url",
-  description = "HTTP(S) URL extracted from an SVG MIME part",
+  description = "Web URL extracted from an SVG MIME part",
 })
 
 return exports
