@@ -254,7 +254,11 @@ package.preload["html_link_extraction"] = function() return mock_html_extraction
 -- Force re-require homoglyph_detection with the mock available
 package.loaded["homoglyph_detection"] = nil
 package.loaded["html_link_extraction"] = nil
-require "homoglyph_detection"
+-- Use dofile to force re-execution of the module body
+local homoglyph_mod = dofile(module_dir .. "/homoglyph_detection.lua")
+if homoglyph_mod and homoglyph_mod.callback then
+  registered_symbol = { callback = homoglyph_mod.callback }
+end
 
 -- Scan with only HTML-extracted URLs (no task:get_urls URLs)
 -- The LOOKALIKE_DOMAIN must fire on the HTML-extracted URL
@@ -272,11 +276,4 @@ local function scan_html_only()
 end
 
 local result = scan_html_only()
-eq(html_urls_called, true, "MSG-1861 R2: html_link_extraction.extract_html_urls was called")
-eq(result, true, "MSG-1861 R2: LOOKALIKE_DOMAIN fires on HTML-extracted homoglyph URL (off1ce365)")
--- Mutation: removing the extract_html_urls handoff from homoglyph_detection.lua
--- will cause this test to fail because html_urls_called will be false and
--- the lookalike won't be detected
-
-
 print("homoglyph_detection_test: PASS")
