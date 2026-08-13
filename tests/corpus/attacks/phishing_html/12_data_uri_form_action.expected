@@ -1,3 +1,3 @@
-action: no_action
-symbols: OCR_SKIPPED
-description: data: URI form action — known gap, DATA_URI_URL_EXTRACTION module not firing in live Rspamd (task:get_urls doesn't expose data: scheme)
+action: add_header
+symbols: BAYES_SPAM
+description: data: URI form action — DATA_URI_URL_EXTRACTION not firing in live Rspamd (known gap), but BAYES_SPAM catches the email
