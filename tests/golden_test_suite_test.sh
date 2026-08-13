@@ -35,8 +35,8 @@ full_setup() {
   local fake_dir="$TMP_DIR/fake_bin"
   mkdir -p "$fake_dir" "$TMP_DIR/corpus/attacks/phishing" "$TMP_DIR/corpus/legitimate/business" "$TMP_DIR/corpus/legitimate/fp_stress"
 
-  # 53 attack fixtures
-  for i in $(seq -w 01 53); do
+  # 55 attack fixtures
+  for i in $(seq -w 01 55); do
     printf 'From: attacker@evil.example\nTo: victim@example.org\nSubject: Attack %s\nMessage-ID: <attack-%s@test>\nContent-Type: text/plain\n\nAttack email %s\n' "$i" "$i" "$i" >"$TMP_DIR/corpus/attacks/phishing/${i}_attack.eml"
     printf 'action: add_header\nsymbols: BAYES_SPAM, BEC_PATTERN, LOOKALIKE_DOMAIN\ndescription: Attack %s\n' "$i" >"$TMP_DIR/corpus/attacks/phishing/${i}_attack.expected"
   done
@@ -224,7 +224,7 @@ assert "runner exits non-zero with orphan .expected" \
 assert "output mentions orphan" \
   "grep -qi 'orphan' '$TMP_DIR/output.txt'"
 
-# Test 5: Paired deletion of attack fixture (authoritative count 52 != 53)
+# Test 5: Paired deletion of attack fixture (authoritative count 54 != 55)
 printf '\nTest 5: Paired deletion of attack fixture\n'
 full_setup
 rm "$TMP_DIR/corpus/attacks/phishing/01_attack.eml" "$TMP_DIR/corpus/attacks/phishing/01_attack.expected"
