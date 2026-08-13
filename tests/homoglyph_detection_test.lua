@@ -135,6 +135,7 @@ assert_url_flagged("https://paypa1-verify.com/login", "1 maps to l in paypal")
 assert_url_flagged("https://g00gle-search.com/", "multiple 0 characters map to o")
 assert_url_flagged("https://fac3book-login.com/", "3 maps to e")
 assert_url_flagged("https://amaz0n-deal.com/", "0 maps to o in amazon")
+assert_url_flagged("https://off1ce365-login.com/", "1 maps to i in office365")
 assert_url_clean("https://microsoft.com/", "exact microsoft brand has no substitution")
 assert_url_flagged("https://micros0ft.com/", "microsoft lookalike registered domain")
 assert_url_clean("https://example.com/", "non-brand domain")
@@ -228,5 +229,54 @@ eq(matched, false, "exact brand domain paypal.com should not trigger")
 -- Non-brand domain should NOT fire
 matched = scan({ from_domain = "example.com" })
 eq(matched, false, "non-brand example.com should not trigger")
+
+
+-- MSG-1861 R2: Mutation-sensitive test for HTML URL handoff to LOOKALIKE_DOMAIN
+-- This test verifies that URLs from html_link_extraction.extract_html_urls are checked
+-- by LOOKALIKE_DOMAIN. If the handoff is removed, this test must fail.
+local html_urls_called = false
+local mock_html_extraction = {
+  extract_html_urls = function(task)
+    html_urls_called = true
+    -- Return a URL with a homoglyph domain that should be detected
+    return {
+      {
+        get_host = function() return "off1ce365-login.evil.test" end,
+        get_tld = function() return "evil.test" end,
+        get_query = function() return nil end,
+        get_path = function() return "/" end,
+      },
+    }
+  end,
+}
+package.preload["html_link_extraction"] = function() return mock_html_extraction end
+
+-- Force re-require homoglyph_detection with the mock available
+package.loaded["homoglyph_detection"] = nil
+package.loaded["html_link_extraction"] = nil
+require "homoglyph_detection"
+
+-- Scan with only HTML-extracted URLs (no task:get_urls URLs)
+-- The LOOKALIKE_DOMAIN must fire on the HTML-extracted URL
+local html_matched = false
+local function scan_html_only()
+  html_matched = false
+  local task = {
+    get_urls = function() return {} end,  -- No native URLs
+    get_from = function() return nil end,
+    get_reply_sender = function() return nil end,
+  }
+  local matched, score, options = registered_symbol.callback(task)
+  html_matched = matched or false
+  return html_matched
+end
+
+local result = scan_html_only()
+eq(html_urls_called, true, "MSG-1861 R2: html_link_extraction.extract_html_urls was called")
+eq(result, true, "MSG-1861 R2: LOOKALIKE_DOMAIN fires on HTML-extracted homoglyph URL (off1ce365)")
+-- Mutation: removing the extract_html_urls handoff from homoglyph_detection.lua
+-- will cause this test to fail because html_urls_called will be false and
+-- the lookalike won't be detected
+
 
 print("homoglyph_detection_test: PASS")

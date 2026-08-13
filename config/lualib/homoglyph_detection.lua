@@ -24,6 +24,7 @@ local brands = {
   "dropbox",
   "adobe",
   "ebay",
+  "office365",
 }
 
 local confusables = {
@@ -299,7 +300,21 @@ exports.levenshtein = levenshtein
 exports.brands = brands
 
 local function lookalike_domain(task)
+  -- Collect URLs from both task:get_urls() and independently extracted HTML URLs
+  -- This ensures multipart/alternative HTML-only URLs are checked
+  local all_urls = {}
   for _, url in ipairs(task:get_urls() or {}) do
+    table.insert(all_urls, url)
+  end
+  -- Also check independently extracted HTML URLs (for multipart/alternative divergence)
+  local html_ok, html_link_extraction = pcall(require, "html_link_extraction")
+  if html_ok and html_link_extraction.extract_html_urls then
+    for _, url in ipairs(html_link_extraction.extract_html_urls(task) or {}) do
+      table.insert(all_urls, url)
+    end
+  end
+
+  for _, url in ipairs(all_urls) do
     local host = normalize_host(url:get_host())
     local registered_domain = url:get_tld()
     local brand, component = exports.check_domain(host, registered_domain)

@@ -1,0 +1,21 @@
+From: "IT Helpdesk" <helpdesk@phishing.test>
+To: user@example.org
+Date: Thu, 13 Aug 2026 12:00:00 +0000
+Subject: Password expiry notification - reset required
+Message-ID: <msg-1861-multipart-divergence@phishing.test>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="alt-boundary"
+
+--alt-boundary
+Content-Type: text/plain; charset=utf-8
+
+Your password will expire in 24 hours. Please reset at:
+https://office365.example.org/password-reset
+
+--alt-boundary
+Content-Type: text/html; charset=utf-8
+
+<p>Your password will expire in 24 hours. Please reset at:</p>
+<p><a href="https://office365.login-secure-portal.phishing.test/password-reset">Click here to reset your password</a></p>
+
+--alt-boundary--

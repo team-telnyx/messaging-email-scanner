@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# MSG-1833: Integration test for HTML link extraction
+# MSG-1833/MSG-1861: Integration test for HTML link extraction
 # Verifies prefilter ordering (HTML_LINK_MISMATCH runs before PHISH_URL_HEURISTIC)
 # and numeric-label rejection (version numbers don't trigger mismatch)
 set -euo pipefail
@@ -127,6 +127,42 @@ scan "$TMP_DIR/clean.eml" >"$TMP_DIR/clean.out" 2>&1
 if grep -Eq 'HTML_LINK_MISMATCH' "$TMP_DIR/clean.out"; then
   sed 's/^/  /' "$TMP_DIR/clean.out" >&2
   fail 'matching display/href domain should not trigger HTML_LINK_MISMATCH'
+fi
+
+# Test 5: multipart/alternative URLs must be checked independently. A benign
+# text/plain URL must not mask a phishing href in the HTML alternative.
+cat >"$TMP_DIR/multipart-divergence.eml" <<'EOF'
+From: "IT Helpdesk" <helpdesk@phishing.test>
+To: user@example.org
+Date: Thu, 13 Aug 2026 12:00:00 +0000
+Subject: Password expiry notification - reset required
+Message-ID: <msg-1861-multipart-divergence@phishing.test>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="alt-boundary"
+
+--alt-boundary
+Content-Type: text/plain; charset=utf-8
+
+Your password will expire in 24 hours. Please reset at:
+https://office365.example.org/password-reset
+
+--alt-boundary
+Content-Type: text/html; charset=utf-8
+
+<p>Your password will expire in 24 hours. Please reset at:</p>
+<p><a href="https://office365.login-secure-portal.com/password-reset">Click here to reset your password</a></p>
+
+--alt-boundary--
+EOF
+
+scan "$TMP_DIR/multipart-divergence.eml" >"$TMP_DIR/multipart-divergence.out" 2>&1
+if ! grep -Eq 'PHISH_URL_HEURISTIC' "$TMP_DIR/multipart-divergence.out"; then
+  sed 's/^/  /' "$TMP_DIR/multipart-divergence.out" >&2
+  fail 'expected PHISH_URL_HEURISTIC for phishing URL in HTML alternative'
+fi
+if grep -Eq '^Action: no action$' "$TMP_DIR/multipart-divergence.out"; then
+  sed 's/^/  /' "$TMP_DIR/multipart-divergence.out" >&2
+  fail 'multipart URL divergence attack must produce add header or higher action'
 fi
 
 printf 'html_link_test: PASS\n'

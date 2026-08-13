@@ -11,6 +11,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install Lua
+        run: sudo apt-get update && sudo apt-get install -y lua5.4
+      - name: Run URL extraction and heuristic Lua tests
+        run: |
+          HTML_LINK_EXTRACTION_LUA_PATH=config/lualib lua5.4 tests/html_link_extraction_test.lua
+          PHISH_URL_HEURISTICS_LUA_PATH=config/lualib lua5.4 tests/phish_url_heuristics_test.lua
       - name: Run HTML link extraction integration test
         run: |
           docker build -t messaging-email-scanner:html-link-test .

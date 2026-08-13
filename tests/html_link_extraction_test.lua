@@ -126,10 +126,13 @@ local function plain_part()
   }
 end
 
-local function scan(parts)
+local function scan(parts, native_urls)
   local task = {
     get_text_parts = function()
       return parts
+    end,
+    get_urls = function()
+      return native_urls or {}
     end,
     get_mempool = function()
       return {}
@@ -162,14 +165,32 @@ result = scan({ html_part({ anchor("https://evil.com/login", "Click here") }) })
 eq(result.matched, false, "generic display mismatch")
 
 -- Prove that a hidden href with subdomain impersonation can be consumed by
--- the existing phishing heuristic (Rspamd natively extracts HTML URLs).
-result = scan({ html_part({ anchor("https://paypal.com.evil.com/login", "Click here to verify") }) })
-result.task.get_urls = function()
-  return { parsed_url("https://paypal.com.evil.com/login") }
-end
+-- the existing phishing heuristic when it appears in the native URL set.
+result = scan(
+  { html_part({ anchor("https://paypal.com.evil.com/login", "Click here to verify") }) },
+  { parsed_url("https://paypal.com.evil.com/login") }
+)
 local heuristic_matched, _, heuristic_options = phish_heuristics.callback(result.task)
 eq(heuristic_matched, true, "hidden href phishing heuristic")
 eq(heuristic_options[1], "subdomain_impersonation", "hidden href heuristic reason")
+
+-- MSG-1861: Rspamd can expose only the selected text/plain alternative in
+-- task:get_urls(). The phishing callback must independently inspect the HTML
+-- alternative instead of trusting that native URL set.
+result = scan({
+  plain_part(),
+  html_part({ anchor("https://account.example.org/password-reset", "Reset password") }),
+  html_part({
+    anchor("https://support.example.org/help", "Get help"),
+    anchor("https://paypal.login-secure-portal.com/password-reset", "Reset password"),
+  }),
+}, {
+  parsed_url("https://account.example.org/password-reset"),
+})
+heuristic_matched, _, heuristic_options = phish_heuristics.callback(result.task)
+eq(heuristic_matched, true, "multipart alternative HTML phishing heuristic")
+eq(heuristic_options[1], "subdomain_impersonation", "multipart alternative heuristic reason")
+eq(heuristic_options[2], "paypal.login-secure-portal.com", "multipart alternative heuristic host")
 
 -- A generic link to a known-clean domain is not a mismatch.
 result = scan({ html_part({ anchor("https://www.google.com/search", "Click here") }) })
