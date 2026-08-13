@@ -132,7 +132,8 @@ DOCKER_EOF
   chmod +x "$fake_dir/docker"
 }
 
-# Create a Bayes-failing fake docker (stat returns 0, no BAYES in scans)
+# Create a Bayes-failing fake docker that passes aggregate guard but fails canary
+# stat returns 50 (passes aggregate), but canary scan has no BAYES symbol
 create_bayes_fail_docker() {
   local fake_dir=$1
   cat >"$fake_dir/docker" <<'BAYES_FAIL_EOF'
@@ -156,19 +157,21 @@ case "$cmd" in
     done
     subcmd="${1:-}"; shift || true
     if [[ "$subcmd" == "stat" ]]; then
-      echo "Messages learned: 0"
-      echo "Total learns: 0"
+      # Return 50 so aggregate guard passes — the canary must catch the failure
+      echo "Messages learned: 50"
+      echo "Total learns: 50"
       exit 0
     fi
     if [[ "$subcmd" == "learn_spam" || "$subcmd" == "learn_ham" ]]; then
       cat >/dev/null; exit 0
     fi
     input=$(cat)
-    # NO BAYES symbol in any scan output
-    if echo "$input" | grep -q "Attack"; then
+    # Canary scan: echo Message-ID with "bayes" but NO Symbol: BAYES_SPAM/HAM
+    # This must FAIL the exact grep but would PASS the broad grep
+    if echo "$input" | grep -q "URGENT\|spam-test\|canary"; then
+      printf 'Results for file: stdin\nMessage-ID: canary-bayes@test\nAction: no action\nScore: 2.00 / 15.00\nSymbol: OCR_SKIPPED (0.00)\n'
+    elif echo "$input" | grep -q "Attack"; then
       printf 'Results for file: stdin\nAction: add header\nScore: 5.00 / 15.00\nSymbol: BEC_PATTERN (7.00)\nSymbol: OCR_SKIPPED (0.00)\n'
-    elif echo "$input" | grep -q "URGENT\|spam-test\|canary"; then
-      printf 'Results for file: stdin\nAction: no action\nScore: 2.00 / 15.00\nSymbol: OCR_SKIPPED (0.00)\n'
     elif echo "$input" | grep -q "Stress"; then
       printf 'Results for file: stdin\nAction: add header\nScore: 5.00 / 15.00\nSymbol: BEC_PATTERN (7.00)\nSymbol: OCR_SKIPPED (0.00)\n'
     else
@@ -250,7 +253,7 @@ bash "$REPO_ROOT/tests/golden_test_suite.sh" >"$TMP_DIR/output.txt" 2>&1 || exit
 assert "runner exits non-zero when fp_stress target symbol missing" \
   "[ $exit_code -ne 0 ]"
 
-# Test 8: Bayes fail-open — stat returns 0, no BAYES symbol in canary
+# Test 8: Bayes fail-open — canary scan has no BAYES symbol (aggregate passes)
 printf '\nTest 8: Bayes fail-open detection\n'
 full_setup
 create_bayes_fail_docker "$TMP_DIR/fake_bin"
@@ -259,8 +262,10 @@ exit_code=0
 bash "$REPO_ROOT/tests/golden_test_suite.sh" >"$TMP_DIR/output.txt" 2>&1 || exit_code=$?
 assert "runner exits non-zero when Bayes canary fails" \
   "[ $exit_code -ne 0 ]"
-assert "output mentions Bayes failure" \
-  "grep -qi 'bayes\|canary' '$TMP_DIR/output.txt'"
+assert "output mentions canary failure specifically" \
+  "grep -qi 'canary.*BAYES\|BAYES.*canary\|canary scan did not' '$TMP_DIR/output.txt'"
+assert "runner did not reach corpus scanning" \
+  "! grep -q 'Scanning golden corpus' '$TMP_DIR/output.txt'"
 
 # Test 9: Paired deletion of legitimate fixture (authoritative count 54 != 55)
 printf '\nTest 9: Paired deletion of legitimate fixture\n'
