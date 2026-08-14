@@ -14,7 +14,7 @@ NETWORK="golden-net-$$"
 REDIS_ALIAS="redis"
 
 # Authoritative corpus inventory — must match or CI fails
-EXPECTED_ATTACKS=61
+EXPECTED_ATTACKS=62
 EXPECTED_LEGITIMATE=55
 
 TOTAL=0

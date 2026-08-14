@@ -53,6 +53,8 @@ jobs:
         run: FROM_DISPLAY_IMPERSONATION_LUA_PATH=config/lualib lua5.4 tests/from_display_impersonation_test.lua
       - name: Run header URL extraction Lua tests
         run: HEADER_URL_EXTRACTION_LUA_PATH=config/lualib lua5.4 tests/header_url_extraction_test.lua
+      - name: Run text social engineering Lua tests
+        run: TEXT_SOCIAL_ENGINEERING_LUA_PATH=config/lualib lua5.4 tests/text_social_engineering_test.lua
       - name: Test golden suite runner
         run: bash tests/golden_test_suite_test.sh
       - name: Run data URI URL extraction Lua tests

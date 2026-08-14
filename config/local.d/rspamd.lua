@@ -1,5 +1,6 @@
 -- Load repository-owned Lua prefilter rules from /usr/share/rspamd/lualib.
 require "bec_heuristics"
+require "text_social_engineering"
 require "svg_url_extraction"
 require "ical_url_extraction"
 require "data_uri_url_extraction"
