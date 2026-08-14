@@ -149,7 +149,7 @@ end
 
 local symbol = symbols.DATA_URI_URL_EXTRACTION
 assert(symbol, "DATA_URI_URL_EXTRACTION must be registered")
-eq(symbol.type, "normal", "registered symbol type")
+eq(symbol.type, "prefilter", "registered symbol type")
 eq(symbol.score, 0.0, "registered symbol score")
 eq(symbol.group, "url", "registered symbol group")
 eq(dependencies.PHISH_URL_HEURISTIC.DATA_URI_URL_EXTRACTION, true, "phishing heuristic dependency")
