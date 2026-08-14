@@ -204,7 +204,7 @@ local function collect_data_uris(task)
     for _, part in ipairs(task:get_text_parts() or {}) do
       if part.is_html and part:is_html() and part.get_html then
         local html = part:get_html()
-        if html then
+        if html and html.foreach_tag then
           for tag_name, attributes in pairs(html_url_attributes) do
             html:foreach_tag(tag_name, function(tag)
               for _, attribute in ipairs(attributes) do
@@ -264,7 +264,7 @@ exports.callback = data_uri_url_extraction
 
 rspamd_config:register_symbol({
   name = SYMBOL,
-  type = "normal",
+  type = "prefilter",
   callback = data_uri_url_extraction,
   score = 0.0,
   group = "url",

