@@ -1,0 +1,15 @@
+From: Account Security <security@notification.example>
+To: victim@example.org
+Date: Sat, 15 Aug 2026 09:30:00 +0000
+Message-ID: <msg-1876-short-url-phishing@corpus.phishing.test>
+Subject: URGENT: VERIFY YOUR ACCOUNT IMMEDIATELY
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+We detected unusual activity on your account. Your access will be suspended today unless you verify your credentials immediately.
+
+Sign in now to confirm your password:
+https://bit.ly/3AccountVerify
+
+Account Security Team
