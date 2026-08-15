@@ -31,6 +31,9 @@ local brands = {
   "docusign",
   "zoom",
   "slack",
+  "global",
+  "supplier",
+  "vendor",
 }
 
 local brand_set = {}
@@ -138,15 +141,18 @@ local function host_labels(host)
   return labels
 end
 
+local brand_to_domains
+
 -- Check if any complete label or hyphen-delimited label component matches a
--- brand. This catches office365-login.evil.test without matching notpaypal.com.
+-- fixed-domain brand. Generic business terms remain in the shared brand set for
+-- homoglyph detection but cannot imply impersonation of one canonical domain.
 local function host_has_brand_label(host)
   for label in host:gmatch("[^.]+") do
-    if brand_set[label] then
+    if brand_set[label] and brand_to_domains[label] then
       return label
     end
     for component in label:gmatch("[^%-_]+") do
-      if brand_set[component] then
+      if brand_set[component] and brand_to_domains[component] then
         return component
       end
     end
@@ -201,7 +207,7 @@ end
 -- Map brand name to its legitimate domain set for cross-brand suppression.
 -- Defined explicitly (not inferred from first label) to handle alias domains
 -- like citi.com (brand=citibank) and x.com (brand=twitter).
-local brand_to_domains = {
+brand_to_domains = {
   paypal = { ["paypal.com"] = true },
   apple = { ["apple.com"] = true, ["apple.com.cn"] = true, ["apple.co.jp"] = true, ["apple.co.uk"] = true },
   google = { ["google.com"] = true, ["google.co.uk"] = true, ["google.co.jp"] = true, ["google.de"] = true, ["google.fr"] = true },
@@ -241,10 +247,10 @@ local function brand_in_path(host, path, url, labels)
   local domain = registered_domain(url, labels)
 
   for _, brand in ipairs(brands) do
-    if path_has_brand_segment(path, brand) then
+    if brand_to_domains[brand] and path_has_brand_segment(path, brand) then
       -- Only suppress if THIS specific brand's domain set contains the registered domain.
       -- This prevents dropbox.com from suppressing paypal detection in the path.
-      if brand_to_domains[brand] and brand_to_domains[brand][domain] then
+      if brand_to_domains[brand][domain] then
         -- The brand in the path IS the owner of this domain — legitimate, skip
       else
         return brand

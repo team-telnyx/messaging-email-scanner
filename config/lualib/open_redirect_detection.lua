@@ -206,7 +206,8 @@ local function lookalike_target(target_url)
   -- not themselves homoglyphs. Exact official brand domains remain clean.
   if not phish_url_heuristics.brand_domain_set[domain] then
     for _, candidate in ipairs(sld_components(domain)) do
-      if phish_url_heuristics.brand_set[candidate] then
+      if phish_url_heuristics.brand_set[candidate] and
+         phish_url_heuristics.brand_to_domains[candidate] then
         return candidate, candidate, "brand_modifier"
       end
     end

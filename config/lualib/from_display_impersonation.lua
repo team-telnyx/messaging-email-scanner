@@ -48,7 +48,7 @@ local function display_brand(display_name)
       local candidate = ""
       for last = first, #tokens do
         candidate = candidate .. tokens[last]
-        if candidate == brand then
+        if brand_to_domains[brand] and candidate == brand then
           return brand
         end
         if #candidate >= #brand then

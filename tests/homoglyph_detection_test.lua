@@ -131,7 +131,7 @@ eq(registered_symbol.score, 6.0, "registered symbol score")
 eq(next(dependencies), nil, "registered dependencies")
 
 local expected_brands = {
-  "docusign", "dropbox", "adobe", "zoom",
+  "docusign", "dropbox", "adobe", "zoom", "global", "supplier", "vendor",
 }
 local brand_set = {}
 for _, brand in ipairs(homoglyph.brands) do
@@ -157,6 +157,9 @@ assert_url_flagged("https://d0cusign.com/", "0 maps to o in docusign")
 assert_url_flagged("https://dr0pbox.com/", "0 maps to o in dropbox")
 assert_url_flagged("https://ad0be.com/", "0 maps to o in adobe")
 assert_url_flagged("https://z00m.us/", "0 maps to o in zoom")
+assert_url_flagged("https://globa1-supplier.com/invoice", "1 maps to l in global")
+assert_url_flagged("https://supp1ier.com/invoice", "1 maps to l in supplier")
+assert_url_flagged("https://vend0r.com/invoice", "0 maps to o in vendor")
 assert_url_clean("https://docusign.com/", "exact docusign brand has no substitution")
 assert_url_clean("https://zoom.us/", "exact zoom brand has no substitution")
 
