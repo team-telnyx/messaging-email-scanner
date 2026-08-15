@@ -1,0 +1,3 @@
+action: add_header
+symbols: BASE64_URL_EXTRACTION, LOOKALIKE_DOMAIN
+description: URL hidden as base64 HTML body text is injected and checked for a Microsoft lookalike domain
