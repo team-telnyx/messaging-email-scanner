@@ -1,0 +1,19 @@
+From: Microsoft 365 Security <security@phishing.test>
+To: security-review@victim.example
+Date: Sat, 15 Aug 2026 10:00:00 +0000
+Message-ID: <msg-1875-base64-url@corpus.phishing.test>
+Subject: Decode this value to complete your Microsoft 365 verification
+MIME-Version: 1.0
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Security verification</title></head>
+<body>
+  <h1>Microsoft 365 security verification</h1>
+  <p>Your mailbox will be suspended unless you complete verification today.</p>
+  <p>This address is not clickable. Copy the text below into a base64 decoder, then open the decoded address:</p>
+  <p>aHR0cHM6Ly9taWNyb3MwZnQtbG9naW4uZXZpbC5jb20vdmVyaWZ5</p>
+</body>
+</html>
