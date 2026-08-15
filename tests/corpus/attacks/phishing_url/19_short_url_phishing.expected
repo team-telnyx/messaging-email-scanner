@@ -1,0 +1,3 @@
+action: add_header
+symbols: SHORT_URL_FLAG
+description: Urgent credential phishing concealed behind a common short URL service

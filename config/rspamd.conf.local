@@ -6,3 +6,7 @@
 # lifecycle remain independent of the repository's static multimap rules. Merge
 # it with the multimap module rather than replacing its existing rule set.
 .include(try=false; priority=10; duplicate=merge) "$LOCAL_CONFDIR/local.d/url_blocklist.conf"
+
+# MSG-1876 flags common URL-shortening hosts at a low score so they contribute
+# alongside urgency, credential-request, and other phishing signals.
+.include(try=false; priority=10; duplicate=merge) "$LOCAL_CONFDIR/local.d/short_url.conf"

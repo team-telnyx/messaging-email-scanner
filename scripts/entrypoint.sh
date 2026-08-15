@@ -48,4 +48,5 @@ fi
 exec rspamd -f \
   --var=CONTROLLER_PASSWORD_HASH="${CONTROLLER_PASSWORD_HASH}" \
   --var=CONTROLLER_ENABLE_PASSWORD_HASH="${CONTROLLER_ENABLE_PASSWORD_HASH}" \
+  --var=SHORT_URL_SERVICES_MAP="${SHORT_URL_SERVICES_MAP:-/etc/rspamd/local.d/maps.d/short_url_services.map}" \
   --var=RSPAMD_LOGGING_LEVEL="${RSPAMD_LOGGING_LEVEL:-info}"
