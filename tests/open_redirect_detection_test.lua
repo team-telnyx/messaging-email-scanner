@@ -193,6 +193,14 @@ results = assert_open_redirect(
 )
 eq(contains(results, "LOOKALIKE_DOMAIN"), true, "brand-modifier target inserts LOOKALIKE_DOMAIN")
 
+-- Generic B2B terms have no canonical brand domain. They remain eligible for
+-- homoglyph checks but must not become brand-modifier evidence on their own.
+results = assert_open_redirect(
+  "https://legitimate.example/go?url=https://supplier-portal.com",
+  "redirect to generic supplier portal"
+)
+eq(contains(results, "LOOKALIKE_DOMAIN"), false, "generic B2B target has no lookalike evidence")
+
 -- Brand-in-subdomain targets reuse PHISH_URL_HEURISTIC evidence.
 results = assert_open_redirect(
   "https://legitimate.example/url?url=https://paypal.evil.example/login",

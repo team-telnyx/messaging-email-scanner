@@ -1,0 +1,3 @@
+action: add_header
+symbols: LOOKALIKE_DOMAIN
+description: Global supplier portal uses a digit homoglyph in its domain

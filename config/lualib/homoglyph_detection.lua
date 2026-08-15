@@ -30,6 +30,9 @@ local brands = {
   "docusign",
   "zoom",
   "slack",
+  "global",
+  "supplier",
+  "vendor",
 }
 
 local confusables = {

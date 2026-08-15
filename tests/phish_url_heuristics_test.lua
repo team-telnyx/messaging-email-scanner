@@ -112,7 +112,8 @@ local expected_brands = {
   "paypal", "apple", "google", "microsoft", "amazon", "netflix",
   "facebook", "instagram", "linkedin", "twitter", "bankofamerica",
   "chase", "wellsfargo", "citibank", "americanexpress", "dropbox",
-  "adobe", "docusign", "zoom", "ebay", "office365",
+  "adobe", "docusign", "zoom", "ebay", "office365", "global",
+  "supplier", "vendor",
 }
 for _, brand in ipairs(expected_brands) do
   eq(heuristics.brand_set[brand], true, "brand list contains " .. brand)
@@ -125,6 +126,11 @@ assert_flagged("https://office365-login.login-secure-portal.com/password-reset",
 assert_flagged("https://office365.google.com/password-reset", "subdomain_impersonation")
 assert_flagged("https://a.b.c.d.account.xyz/login", "excessive_subdomains")
 assert_flagged("https://evil.com/paypal/login", "brand_in_path")
+-- Generic B2B terms are protected from homoglyphs, but are not tied to one
+-- legitimate domain and must not trigger direct brand impersonation heuristics.
+assert_clean("https://globa1-supplier.com/invoice")
+assert_clean("https://example.org/supplier/invoice")
+assert_flagged("https://supplier.paypal.evil.com/login", "subdomain_impersonation")
 assert_clean("https://paypal.com/")
 assert_clean("https://mail.google.com/")
 assert_clean("https://office365.microsoft.com/")

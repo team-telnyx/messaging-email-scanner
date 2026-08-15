@@ -92,6 +92,8 @@ assert_flagged("PayPal", "paypal.com.evil.net", "paypal", "brand domain embedded
 -- specific brand display names.
 assert_clean("admin", "accounts-verify.net", "generic admin display name")
 assert_clean("support", "accounts-verify.net", "generic support display name")
+assert_clean("Global Supplier Portal", "supplier.example", "generic B2B display name")
+assert_clean("Vendor Relations", "vendor.example", "generic vendor display name")
 assert_clean("Pineapple Market", "fruit.example", "brand substring inside another word")
 assert_clean(nil, "accounts-verify.net", "missing display name")
 
