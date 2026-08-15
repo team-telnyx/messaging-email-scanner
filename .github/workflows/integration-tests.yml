@@ -7,6 +7,15 @@ on:
     branches: [main]
 
 jobs:
+  attachment-ocr-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Lua
+        run: sudo apt-get update && sudo apt-get install -y lua5.4
+      - name: Run attachment OCR scan Lua tests
+        run: ATTACHMENT_OCR_SCAN_LUA_PATH=config/lualib lua5.4 tests/attachment_ocr_scan_test.lua
+
   svg-url-extraction:
     runs-on: ubuntu-latest
     steps:

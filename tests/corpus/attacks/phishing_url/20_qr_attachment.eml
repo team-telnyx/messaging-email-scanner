@@ -1,0 +1,22 @@
+From: Identity Security <security@alerts.example>
+To: recipient@example.org
+Date: Sat, 15 Aug 2026 12:00:00 +0000
+Message-ID: <msg-1877-qr-attachment@corpus.phishing.test>
+Subject: Review the attached enrollment image
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="msg-1877-boundary"
+
+--msg-1877-boundary
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 7bit
+
+Open the attached image with your phone to continue.
+
+--msg-1877-boundary
+Content-Type: image/png
+Content-Disposition: attachment; filename="enrollment-qr.png"
+Content-Transfer-Encoding: base64
+
+iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLv
+AAAAAElFTkSuQmCC
+--msg-1877-boundary--
